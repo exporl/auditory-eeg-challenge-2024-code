@@ -1,0 +1,13 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+#Pycharm
+.idea/
+
+debug/
+
+task1_match_mismatch/create_data/data_dir
+task1_match_mismatch/experiments/results
+
+task2_regression/create_data/data_dir
+task2_regression/experiments/results
