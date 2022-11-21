@@ -1,4 +1,7 @@
-"""Code to construct the VLAAI network."""
+"""Code to construct the VLAAI network.
+-- This code script is taken from:
+    https://github.com/exporl/vlaai
+"""
 import tensorflow as tf
 
 

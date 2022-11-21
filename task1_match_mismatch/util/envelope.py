@@ -12,6 +12,11 @@ def calculate_envelope(audio_path, power_factor=0.6, target_fs=64):
     """ Calculates envelope of a
      raw speech file.
 
+     -- the calculation of the envelope is based on the
+     following publication:
+     "Auditory-Inspired Speech Envelope Extraction Methods for Improved EEG-Based
+      Auditory Attention Detection in a Cocktail Party Scenario" (Biesmans et al., 2016)
+
      parameters
      ----------
      audio_path: str

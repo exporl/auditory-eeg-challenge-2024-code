@@ -93,7 +93,7 @@ if __name__ == '__main__':
 
         model.fit(
             dataset_train,
-            epochs=2,
+            epochs=10,
             validation_data=dataset_val,
             callbacks=[
                 tf.keras.callbacks.ModelCheckpoint(
