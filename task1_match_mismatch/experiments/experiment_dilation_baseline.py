@@ -1,5 +1,4 @@
 """Example experiment for dilation model."""
-import argparse
 import json
 import os
 import tensorflow as tf
