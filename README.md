@@ -46,7 +46,7 @@ Make sure to download/unzip these folders into the same folder (e.g. `challenge_
 ![data_diagram](./images/data_diagram.svg)
 
 ## 3. Adjust the [config.json](./config.json) accordingly
-Adjust `dataset_folder` in [config.json](./config.json) from `None` to the absolute path to the folder containing all data (The `challenge_folder` from the previous point).
+Adjust `dataset_folder` in [config.json](./config.json) from `null` to the absolute path to the folder containing all data (The `challenge_folder` from the previous point).
   
 
 OK, you should be all setup now!
