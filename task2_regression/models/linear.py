@@ -1,60 +1,61 @@
 """ This module contains linear backward model"""
+import tensorflow as tf
 
-import numpy as np
+from task2_regression.models.vlaai import pearson_tf
 
 
-class LinearBackwardModel:
-    """A class used to represent a linear backward model.
+@tf.function
+def pearson_loss_cut(y_true, y_pred, axis=1):
+    """Pearson loss function.
 
-    attributes
+    Parameters
     ----------
-    ridge_param: float
-        Lambda parameter in ridge regression
-    model: numpy.ndarray
-        Linear backward model
+    y_true: tf.Tensor
+        True values. Shape is (batch_size, time_steps, n_features)
+    y_pred: tf.Tensor
+        Predicted values. Shape is (batch_size, time_steps, n_features)
 
-    methods
+    Returns
     -------
-    train(eeg, envelope)
-        Finds the analytical solution for the linear backward model
+    tf.Tensor
+        Pearson loss.
+        Shape is (batch_size, 1, n_features)
     """
+    return -pearson_tf(y_true[:, : tf.shape(y_pred)[1], :], y_pred, axis=axis)
 
-    def __init__(self, ridge_param):
-        self.ridge_param = ridge_param
-        self.model = None
 
-    def train(self, eeg, envelope):
-        """Finds the analytical solution for the linear backward model.
-        The solution is based on minimum least squares error.
+@tf.function
+def pearson_metric_cut(y_true, y_pred, axis=1):
+    """Pearson metric function.
 
-        parameters
-        ----------
-        eeg: numpy.ndarray
-            EEG data with shape (n_samples, n_channels)
-        envelope: numpy.ndarray
-            Envelope of speech with shape (n_samples,)
+    Parameters
+    ----------
+    y_true: tf.Tensor
+        True values. Shape is (batch_size, time_steps, n_features)
+    y_pred: tf.Tensor
+        Predicted values. Shape is (batch_size, time_steps, n_features)
 
-        """
-        auto_corr = np.matmul(eeg.T, eeg) / np.size(eeg, 0)
-        regression_matrix = np.eye(np.shape(eeg)[1])
-        auto_corr = auto_corr + self.ridge_param * regression_matrix
-        cross_corr = np.matmul(eeg.T, envelope) / np.size(eeg, 0)
-        self.model = np.linalg.solve(auto_corr, cross_corr)
-        return
+    Returns
+    -------
+    tf.Tensor
+        Pearson metric.
+        Shape is (batch_size, 1, n_features)
+    """
+    return pearson_tf(y_true[:, : tf.shape(y_pred)[1], :], y_pred, axis=axis)
 
-    def predict(self, eeg):
-        """Reconstructs the stimulus envelope from a given EEG.
 
-        parameters
-        ----------
-        eeg: numpy.ndarray
-            EEG data for which we want to reconstruct the stimulus envelope for.
-        """
-        if self.model is None:
-            raise ValueError('linear model is not trained yet! First, use train method to train the model.')
-        else:
-            return np.matmul(eeg, self.model)
-
-    def get_model(self):
-        """ Returns the linear model"""
-        return self.model
+def simple_linear_model(integration_window=32, nb_filters=1, nb_channels=64):
+    inp = tf.keras.layers.Input(
+        (
+            None,
+            nb_channels,
+        )
+    )
+    out = tf.keras.layers.Conv1D(nb_filters, integration_window)(inp)
+    model = tf.keras.models.Model(inputs=[inp], outputs=[out])
+    model.compile(
+        tf.keras.optimizers.Adam(),
+        loss=pearson_loss_cut,
+        metrics=[pearson_metric_cut]
+    )
+    return model

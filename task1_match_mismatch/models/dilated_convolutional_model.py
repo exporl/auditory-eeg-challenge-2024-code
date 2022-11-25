@@ -11,9 +11,11 @@ def dilation_model(
     activation="relu",
     compile=True,
     inputs=tuple(),
-    output_name="output",
 ):
     """Convolutional dilation model.
+
+    Code was taken and adapted from
+    https://github.com/exporl/eeg-matching-eusipco2020
 
     Parameters
     ----------
@@ -35,12 +37,25 @@ def dilation_model(
         If model should be compiled
     inputs : tuple
         Alternative inputs
-    output_name : str
-        Name to give to the output
+
     Returns
     -------
     tf.Model
         The dilation model
+
+
+    References
+    ----------
+    Accou, B., Jalilpour Monesi, M., Montoya, J., Van hamme, H. & Francart, T.
+    Modeling the relationship between acoustic stimulus and EEG with a dilated
+    convolutional neural network. In 2020 28th European Signal Processing
+    Conference (EUSIPCO), 1175–1179, DOI: 10.23919/Eusipco47968.2020.9287417
+    (2021). ISSN: 2076-1465.
+
+    Accou, B., Monesi, M. J., hamme, H. V. & Francart, T.
+    Predicting speech intelligibility from EEG in a non-linear classification
+    paradigm. J. Neural Eng. 18, 066008, DOI: 10.1088/1741-2552/ac33e9 (2021).
+    Publisher: IOP Publishing
     """
     # If different inputs are required
     if len(inputs) == 3:
@@ -67,7 +82,7 @@ def dilation_model(
         eeg_proj_1 = tf.keras.layers.Conv1D(
             dilation_filters,
             kernel_size=kernel_size,
-            dilation_rate=kernel_size ** layer_index,
+            dilation_rate=kernel_size**layer_index,
             strides=1,
             activation=activations[layer_index],
         )(eeg_proj_1)
@@ -76,7 +91,7 @@ def dilation_model(
         env_proj_layer = tf.keras.layers.Conv1D(
             dilation_filters,
             kernel_size=kernel_size,
-            dilation_rate=kernel_size ** layer_index,
+            dilation_rate=kernel_size**layer_index,
             strides=1,
             activation=activations[layer_index],
         )
@@ -88,17 +103,9 @@ def dilation_model(
     cos2 = tf.keras.layers.Dot(1, normalize=True)([eeg_proj_1, env_proj_2])
 
     # Classification
-    out1 = tf.keras.layers.Dense(1, activation="sigmoid")(
+    out = tf.keras.layers.Dense(1, activation="sigmoid")(
         tf.keras.layers.Flatten()(tf.keras.layers.Concatenate()([cos1, cos2]))
     )
-
-    # 1 output per batch
-    out = tf.keras.layers.Reshape([1], name=output_name)(out1)
-
-    # def print_t(t):
-    #     tf.print(t, summarize=-1)
-    #     return t
-    # out = tf.keras.layers.Lambda(print_t)(out)
 
     model = tf.keras.Model(inputs=[eeg, env1, env2], outputs=[out])
 

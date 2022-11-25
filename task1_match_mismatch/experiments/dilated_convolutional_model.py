@@ -3,13 +3,15 @@ import glob
 import json
 import logging
 import os
-
 import tensorflow as tf
 
-from task2_regression.models.linear import simple_linear_model
-from task2_regression.util.dataset_generator import RegressionDataGenerator
-from util.config import load_config
+from task1_match_mismatch.models.dilated_convolutional_model import dilation_model
+from task1_match_mismatch.util.dataset_generator import (
+    MatchMismatchDataGenerator,
+    default_batch_equalizer_fn,
+)
 from util.dataset_generator import create_tf_dataset
+from util.config import load_config
 from util.log import enable_logging
 
 
@@ -46,6 +48,8 @@ if __name__ == "__main__":
     window_length = 5 * 64  # 3 seconds
     # Hop length between two consecutive decision windows
     hop_length = 64
+    # Number of samples (space) between end of matched speech and beginning of mismatched speech
+    spacing = 64
     epochs = 100
     patience = 5
     batch_size = 64
@@ -63,12 +67,13 @@ if __name__ == "__main__":
     features = ["eeg"] + stimulus_features
 
     # Create a directory to store (intermediate) results
-    results_folder = os.path.join(experiments_folder, "results_linear_baseline")
+    results_folder = os.path.join(
+        experiments_folder, "results_dilated_convolutional_model"
+    )
     os.makedirs(results_folder, exist_ok=True)
 
     # create dilation model
-    model = simple_linear_model()
-    model.summary()
+    model = dilation_model(time_window=window_length)
     model_path = os.path.join(results_folder, "model.h5")
 
     if only_evaluate:
@@ -82,9 +87,9 @@ if __name__ == "__main__":
         ]
         # Create list of numpy array files
         dataset_train = create_tf_dataset(
-            RegressionDataGenerator(train_files, window_length),
+            MatchMismatchDataGenerator(train_files, window_length, spacing=spacing),
             window_length,
-            None,
+            default_batch_equalizer_fn,
             hop_length,
             batch_size,
         )
@@ -96,9 +101,9 @@ if __name__ == "__main__":
             if os.path.basename(x).split("_-_")[-1].split(".")[0] in features
         ]
         dataset_val = create_tf_dataset(
-            RegressionDataGenerator(val_files, window_length),
+            MatchMismatchDataGenerator(val_files, window_length, spacing=spacing),
             window_length,
-            None,
+            default_batch_equalizer_fn,
             hop_length,
             batch_size,
         )
@@ -131,9 +136,9 @@ if __name__ == "__main__":
     for sub in subjects:
         files_test_sub = [f for f in test_files if sub in os.path.basename(f)]
         datasets_test[sub] = create_tf_dataset(
-            RegressionDataGenerator(files_test_sub, window_length),
+            MatchMismatchDataGenerator(files_test_sub, window_length, spacing=spacing),
             window_length,
-            None,
+            default_batch_equalizer_fn,
             hop_length,
             1,
         )

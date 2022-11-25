@@ -1,9 +1,15 @@
 import numpy as np
 import tensorflow as tf
 
+from util.dataset_generator import (
+    DataGenerator,
+    default_group_key_fn,
+    default_feature_sort_function,
+)
+
 
 @tf.function
-def batch_equalizer(eeg, match_env, mismatch_env):
+def default_batch_equalizer_fn(*args):
     """Batch equalizer.
     Prepares the inputs for a model to be trained in
     match-mismatch task. It makes sure that match_env
@@ -28,147 +34,75 @@ def batch_equalizer(eeg, match_env, mismatch_env):
     tf.Tensor
         envelope 2.
     """
+    eeg = args[0]
     new_eeg = tf.concat([eeg, eeg], axis=0)
-    env1 = tf.concat([match_env, mismatch_env], axis=0)
-    env2 = tf.concat([mismatch_env, match_env], axis=0)
-    # print(new_eeg.shape, env1.shape, env2.shape)
-
+    all_features = [new_eeg]
+    for match, mismatch in zip(args[1::2], args[2::2]):
+        stimulus_feature1 = tf.concat([match, mismatch], axis=0)
+        stimulus_feature2 = tf.concat([mismatch, match], axis=0)
+        all_features += [stimulus_feature1, stimulus_feature2]
     labels = tf.concat(
         [
-            tf.tile(
-                tf.constant([[0]]), [tf.shape(eeg)[0], 1]
-            ),
-            tf.tile(
-                tf.constant([[1]]), [tf.shape(eeg)[0], 1]
-            ),
+            tf.tile(tf.constant([[0]]), [tf.shape(eeg)[0], 1]),
+            tf.tile(tf.constant([[1]]), [tf.shape(eeg)[0], 1]),
         ],
         axis=0,
     )
 
     # print(new_eeg.shape, env1.shape, env2.shape, labels.shape)
-    return (new_eeg, env1, env2), labels
+    return tuple(all_features), labels
 
 
-def create_generator(files, window_length, hop_length=64, spacing=64, batch_size=16):
-    """ Creates a tf.data.Dataset.
-    This will be used to create a dataset generator that will
-    pass data to a model in match-mismatch task.
-
-    parameters
-    ---------
-    files: list
-        A list of data recordings
-    window_length: int
-        Length of the decision window
-    hop_length: int
-        Hop length between two consecutive decision windows
-    spacing: int
-        Number of samples (space) between end of matched speech and beginning of mismatched speech
-    batch_size: int
-        Batch-size, the actual batch-size will be 2 * batch_size due to batch_equalizer()
-
-    returns
-    -------
-    tf.data.Dataset
-        A generater that generates data for match-mismatch task
-    """
-    gen = GenerateData(files, window_length, spacing)
-
-    # create tf dataset from generator
-    dataset = tf.data.Dataset.from_generator(
-        gen,
-        output_types=(tf.float32, tf.float32, tf.float32),
-        output_shapes=(tf.TensorShape([None, 64]), tf.TensorShape([None, 1]), tf.TensorShape([None, 1]))
-    )
-    # window dataset
-    dataset = dataset.map(lambda x, y, z: (tf.signal.frame(x, window_length, hop_length, axis=0),
-                                           tf.signal.frame(y, window_length, hop_length, axis=0),
-                                           tf.signal.frame(z, window_length, hop_length, axis=0)))
-
-    # batch data
-    dataset = dataset.interleave(lambda x, y, z: tf.data.Dataset.from_tensor_slices((x, y, z)), cycle_length=4,
-                                 block_length=16).batch(batch_size, drop_remainder=True)
-
-    # prepare each batch
-    dataset = dataset.map(lambda x, y, z: batch_equalizer(x, y, z))
-
-    return dataset
-
-
-class GenerateData:
+class MatchMismatchDataGenerator(DataGenerator):
     """Generate data."""
 
-    def __init__(self, files, window_length, spacing):
-        """Initialize.
-
-        Parameters
-        ----------
-        window_length: int
-            Length of the decision window.
-        spacing: int
-            Number of samples (space) between end of matched speech and beginning of mismatched speech
-        """
-        self.files = files
-        self.window_length = window_length
+    def __init__(
+        self,
+        files,
+        window_length,
+        group_key_fn=default_group_key_fn,
+        feature_sort_fn=default_feature_sort_function,
+        as_tf_tensors=True,
+        spacing=64,
+    ):
+        super().__init__(
+            files, window_length, group_key_fn, feature_sort_fn, as_tf_tensors
+        )
         self.spacing = spacing
 
-    def __len__(self):
-        return len(self.files)
+    @property
+    def nb_features(self):
+        return 2 * len(self.files[0]) - 1
 
-    def __getitem__(self, idx):
-        """Get item.
+    @property
+    def feature_dims(self):
+        eeg_dim = np.load(self.files[0][0]).shape[-1]
+        speech_feature_dims = []
+        for speech_feature_path in self.files[0][1:]:
+            speech_feature_dims += [np.load(speech_feature_path).shape[-1]] * 2
+        return [eeg_dim] + speech_feature_dims
 
-        Parameters
-        ----------
-        idx: int
-            Index to get.
-
-        Returns
-        -------
-        tuple (numpy.ndarray, numpy.ndarray, numpy.ndarray)
-            (EEG, matched envelope, mismatched envelope).
-        """
-        data = np.load(self.files[idx])
-        return self.create_imposter(data)
-
-    def create_imposter(self, data):
+    def prepare_data(self, data):
         """Creates mismatch (imposter) envelope.
 
         Parameters
         ----------
-        data: numpy.ndarray
+        data: Sequence[numpy.ndarray]
             Data to create an imposter for.
 
         Returns
         -------
-        tuple (numpy.ndarray, numpy.ndarray, numpy.ndarray)
-            (EEG, matched envelope, mismatched envelope).
+        tuple (numpy.ndarray, numpy.ndarray, numpy.ndarray, ...)
+            (EEG, matched stimulus feature, mismatched stimulus feature, ...).
         """
-        new_length = data.shape[0] - self.window_length - self.spacing
-        eeg = data[0:new_length, 0:64]
-        match_env = data[0:new_length, 64:]
-        mismatch_env = data[self.spacing + self.window_length:, 64:]
-        return (eeg, match_env, mismatch_env)
-
-    def __call__(self):
-        """Call.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        tuple (numpy.ndarray, numpy.ndarray, numpy.adarray)
-            EEG, matched envelope, mismatched envelope.
-        """
-        for idx in range(self.__len__()):
-            yield self.__getitem__(idx)
-
-            if idx == self.__len__() - 1:
-                self.on_epoch_end()
-
-    def on_epoch_end(self):
-        """End of epoch.
-            Shuffles eeg data file paths.
-        """
-        np.random.shuffle(self.files)
+        data = super(MatchMismatchDataGenerator, self).prepare_data(data)
+        eeg = data[0]
+        new_length = eeg.shape[0] - self.window_length - self.spacing
+        resulting_data = [eeg[:new_length, ...]]
+        for stimulus_feature in data[1:]:
+            match_feature = stimulus_feature[:new_length, ...]
+            mismatch_feature = stimulus_feature[
+                self.spacing + self.window_length:, ...
+            ]
+            resulting_data += [match_feature, mismatch_feature]
+        return resulting_data

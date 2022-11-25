@@ -35,7 +35,17 @@ def time_lag_matrix(eeg, envelope=None, num_lags=26):
             final_array = np.concatenate((final_array, eeg_t), axis=1)
 
     # Shuffle the columns such that they are ordered by time lag
-    final_array = final_array[:, list(np.concatenate([np.arange(i, final_array.shape[1], num_channels) for i in range(num_channels)]))]
+    final_array = final_array[
+        :,
+        list(
+            np.concatenate(
+                [
+                    np.arange(i, final_array.shape[1], num_channels)
+                    for i in range(num_channels)
+                ]
+            )
+        ),
+    ]
 
     time_len = final_array.shape[0]
     # Add bias term
@@ -44,19 +54,3 @@ def time_lag_matrix(eeg, envelope=None, num_lags=26):
         return final_array
     else:
         return final_array, envelope
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

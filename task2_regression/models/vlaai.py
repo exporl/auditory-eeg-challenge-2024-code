@@ -1,6 +1,5 @@
 """Code to construct the VLAAI network.
--- This code script is taken from:
-    https://github.com/exporl/vlaai
+Code was extrcted from https://github.com/exporl/vlaai
 """
 import tensorflow as tf
 
@@ -178,12 +177,8 @@ def pearson_tf(y_true, y_pred, axis=1):
         axis=axis,
         keepdims=True,
     )
-    std_true = tf.reduce_sum(
-        tf.square(y_true - y_true_mean), axis=axis, keepdims=True
-    )
-    std_pred = tf.reduce_sum(
-        tf.square(y_pred - y_pred_mean), axis=axis, keepdims=True
-    )
+    std_true = tf.reduce_sum(tf.square(y_true - y_true_mean), axis=axis, keepdims=True)
+    std_pred = tf.reduce_sum(tf.square(y_pred - y_pred_mean), axis=axis, keepdims=True)
     denominator = tf.sqrt(std_true * std_pred)
 
     # Compute the pearson correlation

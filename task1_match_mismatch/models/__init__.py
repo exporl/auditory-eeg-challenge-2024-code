@@ -1,1 +1,1 @@
-# __init__.py
+"""Models for task1."""
