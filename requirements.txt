@@ -1,5 +1,6 @@
+tensorflow >=2.4.0
 numpy
-tensorflow
 scipy
 brian2
 brian2hears
+librosa

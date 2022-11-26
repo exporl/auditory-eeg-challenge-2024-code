@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     # Parameters
     # Length of the decision window
-    window_length = 5 * 64  # 3 seconds
+    window_length = 3 * 64  # 3 seconds
     # Hop length between two consecutive decision windows
     hop_length = 64
     # Number of samples (space) between end of matched speech and beginning of mismatched speech
@@ -63,7 +63,15 @@ if __name__ == "__main__":
     root_folder = os.path.dirname(os.path.dirname(experiments_folder))
     config = load_config(os.path.join(root_folder, "config.json"))
     data_folder = os.path.join(config["dataset_folder"], config["split_folder"])
+
+    # stimulus feature which will be used for training the model. Can be either 'envelope' ( dimension 1) or 'mel' (dimension 28)
     stimulus_features = ["envelope"]
+    stimulus_dimension = 1
+
+    # uncomment if you want to train with the mel spectrogram stimulus representation
+    # stimulus_features = ["mel"]
+    # stimulus_dimension = 28
+
     features = ["eeg"] + stimulus_features
 
     # Create a directory to store (intermediate) results
@@ -73,7 +81,7 @@ if __name__ == "__main__":
     os.makedirs(results_folder, exist_ok=True)
 
     # create dilation model
-    model = dilation_model(time_window=window_length)
+    model = dilation_model(time_window=window_length, eeg_input_dimension=64, env_input_dimension=stimulus_dimension)
     model_path = os.path.join(results_folder, "model.h5")
 
     if only_evaluate:

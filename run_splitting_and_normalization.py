@@ -24,10 +24,10 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--speech-features",
+        "--speech_features",
         choices=["envelope", "mel"],
         nargs="+",
-        default=["envelope"],
+        default=["envelope", "mel"],
         help='Speech features to split and normalize. Multiple features can'
              'be selected.'
     )
@@ -42,7 +42,7 @@ if __name__ == "__main__":
              "--split-names.",
     )
     parser.add_argument(
-        "--no-cut-to-shortest-length",
+        "--no_cut_to_shortest_length",
         action="store_true",
         default=False,
         help="Disable cutting features to the shortest feature length. "
@@ -50,7 +50,7 @@ if __name__ == "__main__":
              "the EEG and speech features."
     )
     parser.add_argument(
-        "--split-names",
+        "--split_names",
         nargs="+",
         default=["train", "val", "test"],
         help="Define the name of each split. The first split will be "
@@ -74,7 +74,7 @@ if __name__ == "__main__":
         help="Overwrite already existing split data instead of skipping."
     )
     parser.add_argument(
-        "--start-from-scratch",
+        "--start_from_scratch",
         action="store_true",
         help="Clear all split data and start from scratch. There will be an "
              "additional confirmation step."

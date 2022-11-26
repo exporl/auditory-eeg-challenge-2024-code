@@ -5,6 +5,8 @@ import logging
 import os
 import tensorflow as tf
 
+
+
 from task2_regression.models.vlaai import vlaai, pearson_loss, pearson_metric
 from task2_regression.util.dataset_generator import RegressionDataGenerator
 from util.config import load_config
@@ -42,7 +44,7 @@ if __name__ == "__main__":
 
     # Parameters
     # Length of the decision window
-    window_length = 5 * 64  # 3 seconds
+    window_length = 10 * 64  # 10 seconds
     # Hop length between two consecutive decision windows
     hop_length = 64
     epochs = 100

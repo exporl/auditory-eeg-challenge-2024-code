@@ -4,6 +4,8 @@ import tensorflow as tf
 
 def dilation_model(
     time_window=None,
+    eeg_input_dimension=64,
+    env_input_dimension=1,
     layers=3,
     kernel_size=3,
     spatial_filters=8,
@@ -61,9 +63,9 @@ def dilation_model(
     if len(inputs) == 3:
         eeg, env1, env2 = inputs[0], inputs[1], inputs[2]
     else:
-        eeg = tf.keras.layers.Input(shape=[time_window, 64])
-        env1 = tf.keras.layers.Input(shape=[time_window, 1])
-        env2 = tf.keras.layers.Input(shape=[time_window, 1])
+        eeg = tf.keras.layers.Input(shape=[time_window, eeg_input_dimension])
+        env1 = tf.keras.layers.Input(shape=[time_window, env_input_dimension])
+        env2 = tf.keras.layers.Input(shape=[time_window, env_input_dimension])
 
     # Activations to apply
     if isinstance(activation, str):

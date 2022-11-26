@@ -19,7 +19,7 @@ if __name__ == "__main__":
     )
 
     parser.add_argument(
-        "--speech-features",
+        "--speech_features",
         choices=["envelope", "mel"],
         nargs="+",
         required=True,

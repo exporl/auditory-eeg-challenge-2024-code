@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     # Parameters
     # Length of the decision window
-    window_length = 5 * 64  # 3 seconds
+    window_length = 10 * 64  # 10 seconds
     # Hop length between two consecutive decision windows
     hop_length = 64
     epochs = 100
