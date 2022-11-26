@@ -24,6 +24,12 @@ def dilation_model(
     time_window : int or None
         Segment length. If None, the model will accept every time window input
         length.
+    eeg_input_dimension : int
+        number of channels of the EEG
+    env_input_dimension : int
+        dimemsion of the stimulus representation.
+        if stimulus == envelope, env_input_dimension =1
+        if stimulus == mel, env_input_dimension =28
     layers : int
         Depth of the network/Number of layers
     kernel_size : int
