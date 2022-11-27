@@ -1,5 +1,5 @@
+"""Run preprocessing on the stimuli."""
 import argparse
-import logging
 
 from util.config import check_config_path
 from util.log import enable_logging
@@ -31,13 +31,16 @@ if __name__ == "__main__":
         help="Overwrite already existing preprocessed data instead of "
              "skipping."
     )
-
+    # Parse arguments
     args = parser.parse_args()
 
+    # Check validity of config path
     config_path = check_config_path(args.config)
 
+    # Create a mapping between feature names and FeatureExtractors.
     feature_dict = {}
     for feature_name in args.speech_features:
         feature_dict[feature_name] = speech_feature_factory(feature_name)
 
+    # Run the extraction
     extract_speech_features(config_path, feature_dict, args.overwrite)

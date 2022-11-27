@@ -1,9 +1,10 @@
+"""Split data in sets and normalize (per recording)."""
 import argparse
 import logging
 import os
 import shutil
-from typing import Union
 
+from typing import Union
 from util.config import load_config, check_config_path
 from util.log import enable_logging
 from util.normalizers.factory import normalizer_factory
@@ -79,16 +80,22 @@ if __name__ == "__main__":
         help="Clear all split data and start from scratch. There will be an "
              "additional confirmation step."
     )
+    # Parse arguments
     args = parser.parse_args()
 
+    # Check and load config
     config_path = check_config_path(args.config)
     config = load_config(config_path)
+
+    # Check if we have to start from scratch
     if args.start_from_scratch:
         logging.warning(
             f"This will delete all the data in {config['split_folder']}. "
             "Are you sure you want to do this?"
         )
+        # Ask for confirmation
         confirmation = input("Type 'yes' to confirm...")
+        # Abort if not 'yes'
         if confirmation.lower() != "yes":
             logging.warning("Stopping")
             exit()
@@ -97,12 +104,15 @@ if __name__ == "__main__":
                 config["dataset_folder"],
                 config["split_folder"],
             )
+            # Delete the split_folder
             if os.path.exists(split_path):
                 shutil.rmtree(split_path)
             logging.info(f"Deleted {split_path}")
 
+    # Get a normalizer from the normalizer_factory
     normalizer = normalizer_factory(args.normalizer)
 
+    # Get a splitter from the splitter factory
     splitter = splitter_factory(
         args.splitter,
         split_data_folder=os.path.join(
@@ -114,6 +124,7 @@ if __name__ == "__main__":
         overwrite=args.overwrite,
     )
 
+    # Split and normalize per recording
     split_per_recording(
         splitter,
         config,
