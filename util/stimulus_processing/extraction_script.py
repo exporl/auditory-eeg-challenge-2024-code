@@ -1,3 +1,4 @@
+"""Script to extract speech features."""
 import glob
 import logging
 import os
@@ -8,6 +9,18 @@ from util.config import load_config
 
 
 def extract_speech_features(config_path, feature_dict, overwrite=False):
+    """Extract the speech features.
+
+    Parameters
+    ----------
+    config_path : Union[str, pathlib.Path]
+        Path to a config file.
+    feature_dict : Mapping[str, FeatureExtractor]
+        Dictionary that maps a feature name to a FeatureExtractor method
+    overwrite : bool
+        Whether to overwrite already existing speech features with the same
+        name.
+    """
     logging.info(f'Extracting features {",".join(feature_dict.keys())}')
 
     # Load the config for this task

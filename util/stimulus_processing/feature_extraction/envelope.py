@@ -48,9 +48,18 @@ def calculate_envelope(audio_path, power_factor=0.6, target_fs=64):
 
 
 class EnvelopeFromGammatone(Filterbank):
-    """Class to calculate an envelope from a gammatone filterbank."""
+    """Converts the output of a GammatoneFilterbank to an envelope."""
 
     def __init__(self, source, power_factor):
+        """Initialize the envelope transformation.
+
+        Parameters
+        ----------
+        source : Gammatone
+            Gammatone filterbank output to convert to envelope
+        power_factor : float
+            The power factor for each sample.
+        """
         super().__init__(source)
         self.power_factor = power_factor
         self.nchannels = 1
@@ -63,7 +72,17 @@ class EnvelopeFromGammatone(Filterbank):
 
 
 class GammatoneEnvelope(FeatureExtractor):
+    """Calculates a gammatone envelope."""
     def __init__(self, power_factor=0.6, target_fs=64):
+        """Initialize the gammatone envelope FeatureExtractor.
+
+        Parameters
+        ----------
+        power_factor : float
+            The power factor for each sample
+        target_fs : int
+            The target sampling frequency
+        """
         self.power_factor = power_factor
         self.target_fs = target_fs
 

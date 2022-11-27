@@ -1,3 +1,4 @@
+"""Code for the dataset_generator for task1."""
 import numpy as np
 import tensorflow as tf
 
@@ -18,21 +19,20 @@ def default_batch_equalizer_fn(*args):
 
     Parameters
     ----------
-    eeg: tf.Tensor
-        EEG data.
-    match_env: tf.Tensor
-        Matched envelope
-    mismatch_env: tf.Tensor
-        Mismatched envelope
+    args : Sequence[tf.Tensor]
+        List of tensors representing feature data
 
     Returns
     -------
-    tf.Tensor
-        EEG data.
-    tf.Tensor
-        envelope 1.
-    tf.Tensor
-        envelope 2.
+    Tuple[Tuple[tf.Tensor], tf.Tensor]
+        Tuple of the EEG/speech features serving as the input to the model and
+        the labels for the match/mismatch task
+
+    Notes
+    -----
+    This function will also double the batch size. E.g. if the batch size of
+    the elements in each of the args was 32, the output features will have
+    a batch size of 64.
     """
     eeg = args[0]
     new_eeg = tf.concat([eeg, eeg], axis=0)
@@ -65,6 +65,24 @@ class MatchMismatchDataGenerator(DataGenerator):
         as_tf_tensors=True,
         spacing=64,
     ):
+        """Initialize the DataGenerator.
+
+        Parameters
+        ----------
+        files: Sequence[Union[str, pathlib.Path]]
+            Files to load.
+        window_length: int
+            Length of the decision window.
+        group_key_fn: Callable[[Union[str, pathlib.Path]], str]
+            Function that creates group keys from file names. These group
+            keys will be used to group files of the same recording together
+        feature_sort_fn: Callable[[str], str]
+            Sorting function for feature names
+        as_tf_tensors: bool
+            Whether to cast resulting numpy arrays to tf.Tensor objects
+        spacing: int
+            Spacing between the matched and mismatched segment in samples
+        """
         super().__init__(
             files, window_length, group_key_fn, feature_sort_fn, as_tf_tensors
         )
@@ -72,10 +90,12 @@ class MatchMismatchDataGenerator(DataGenerator):
 
     @property
     def nb_features(self):
+        """Count the number of features of one recording of this dataset."""
         return 2 * len(self.files[0]) - 1
 
     @property
     def feature_dims(self):
+        """Get the dimensions of the features of each recording."""
         eeg_dim = np.load(self.files[0][0]).shape[-1]
         speech_feature_dims = []
         for speech_feature_path in self.files[0][1:]:

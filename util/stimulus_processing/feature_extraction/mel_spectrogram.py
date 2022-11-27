@@ -1,4 +1,4 @@
-# mel_spectrogram.py
+"""Code to calculate mel spectrograms."""
 import math
 import librosa
 import numpy as np
@@ -16,15 +16,15 @@ def calculate_mel_spectrogram(
 ):
     """Calculates mel spectrogram of a raw speech file.
 
-    parameters
+    Parameters
     ---------
     audio_path: str
         audio file path
     target_fs: int
         Sampling frequency of the calculated mel spectrogram
-    fmin: int
+    fmin: Union[float, int]
         Minimum center frequency used in mel filter matrix
-    fmax: int
+    fmax: Union[float, int]
         Maximum center frequency used in mel filter matrix
     nb_filters: int
         Number of mel spectrogram frequency bands
@@ -33,7 +33,7 @@ def calculate_mel_spectrogram(
     win_length: int
         Window length (in samples) of each frame
 
-    returns
+    Returns
     -------
     numpy.ndarray
         Mel spectrogram
@@ -64,6 +64,7 @@ def calculate_mel_spectrogram(
 
 
 class MelSpectrogram(FeatureExtractor):
+    """Calculates a mel spectrogram."""
     def __init__(
         self,
         target_fs=64,
@@ -73,6 +74,28 @@ class MelSpectrogram(FeatureExtractor):
         hop_length=None,
         win_length=None,
     ):
+        """Initialize a mel spectrogram FeatureExtractor.
+
+        Parameters
+        ---------
+        target_fs: int
+            Sampling frequency of the calculated mel spectrogram
+        fmin: Union[float, int]
+            Minimum center frequency used in mel filter matrix
+        fmax: Union[float, int]
+            Maximum center frequency used in mel filter matrix
+        nb_filters: int
+            Number of mel spectrogram frequency bands
+        hop_length: int
+            Hop length (in samples) used for calculation of the spectrogram
+        win_length: int
+            Window length (in samples) of each frame
+
+        Returns
+        -------
+        numpy.ndarray
+            Mel spectrogram
+        """
         self.target_fs = target_fs
         self.fmin = fmin
         self.fmax = fmax
@@ -80,9 +103,19 @@ class MelSpectrogram(FeatureExtractor):
         self.hop_length = hop_length
         self.win_length = win_length
 
-
-
     def __call__(self, audio_path):
+        """Extract a mel spectrogram from audio_path.
+
+        Parameters
+        ----------
+        audio_path : Union[str, pathlib.Path]
+            Path to an audio file.
+
+        Returns
+        -------
+        np.ndarray
+            Mel spectrogram in numpy array format.
+        """
         return calculate_mel_spectrogram(
             audio_path,
             target_fs=self.target_fs,

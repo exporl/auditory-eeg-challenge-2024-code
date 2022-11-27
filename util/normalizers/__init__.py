@@ -1,1 +1,1 @@
-"""Normalizers."""
+"""Code to normalize data."""

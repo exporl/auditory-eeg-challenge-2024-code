@@ -22,7 +22,7 @@ def create_tf_dataset(
     This will be used to create a dataset generator that will
     pass windowed data to a model in both tasks.
 
-    parameters
+    Parameters
     ---------
     data_generator: DataGenerator
         A data generator.
@@ -37,8 +37,12 @@ def create_tf_dataset(
     batch_size: Optional[int]
         If not None, specifies the batch size. In the match/mismatch task,
         this amount will be doubled by the default_batch_equalizer_fn
+    data_types: Union[Sequence[tf.dtype], tf.dtype]
+        The data types that the individual features of data_generator should
+        be cast to. If you only specify a single datatype, it will be chosen
+        for all EEG/speech features.
 
-    returns
+    Returns
     -------
     tf.data.Dataset
         A Dataset object that generates data to train/evaluate models
@@ -130,9 +134,12 @@ class DataGenerator(abc.ABC):
         window_length: int
             Length of the decision window.
         group_key_fn: Callable[[Union[str, pathlib.Path]], str]
-
-
-
+            Function that creates group keys from file names. These group
+            keys will be used to group files of the same recording together
+        feature_sort_fn: Callable[[str], str]
+            Sorting function for feature names
+        as_tf_tensors: bool
+            Whether to cast resulting numpy arrays to tf.Tensor objects
         """
         self.group_key_fn = group_key_fn
         self.feature_sort_fn = feature_sort_fn
@@ -141,6 +148,19 @@ class DataGenerator(abc.ABC):
         self.files = self.group_recordings(files)
 
     def group_recordings(self, files):
+        """Group recordings and corresponding stimuli.
+
+        Parameters
+        ----------
+        files : Sequence[Union[str, pathlib.Path]]
+            List of filepaths to preprocessed and split EEG and speech features
+
+        Returns
+        -------
+        itertools.groupby
+            Files grouped by the self.group_key_fn and subsequently sorted
+            by the self.feature_sort_fn.
+        """
         new_files = []
         grouped = itertools.groupby(sorted(files), self.group_key_fn)
         for recording_name, feature_paths in grouped:

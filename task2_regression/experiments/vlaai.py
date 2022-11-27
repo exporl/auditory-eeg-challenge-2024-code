@@ -1,4 +1,4 @@
-"""Example experiment for dilation model."""
+"""Example experiment for the VLAAI model."""
 import glob
 import json
 import logging
