@@ -4,7 +4,6 @@ import numpy as np
 from brian2 import Hz, kHz
 from brian2hears import Sound, erbspace, Gammatone, Filterbank
 from scipy import signal
-from util.stimulus_processing.feature_extraction.base import FeatureExtractor
 
 
 def calculate_envelope(audio_path, power_factor=0.6, target_fs=64):
@@ -71,20 +70,3 @@ class EnvelopeFromGammatone(Filterbank):
         )
 
 
-class GammatoneEnvelope(FeatureExtractor):
-    """Calculates a gammatone envelope."""
-    def __init__(self, power_factor=0.6, target_fs=64):
-        """Initialize the gammatone envelope FeatureExtractor.
-
-        Parameters
-        ----------
-        power_factor : float
-            The power factor for each sample
-        target_fs : int
-            The target sampling frequency
-        """
-        self.power_factor = power_factor
-        self.target_fs = target_fs
-
-    def __call__(self, audiopath):
-        return calculate_envelope(audiopath, self.power_factor, self.target_fs)
