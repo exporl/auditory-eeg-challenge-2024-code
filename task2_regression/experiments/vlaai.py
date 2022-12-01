@@ -5,13 +5,8 @@ import logging
 import os
 import tensorflow as tf
 
-
-
 from task2_regression.models.vlaai import vlaai, pearson_loss, pearson_metric
-from task2_regression.util.dataset_generator import RegressionDataGenerator
-from util.config import load_config
-from util.dataset_generator import create_tf_dataset
-from util.log import enable_logging
+from task2_regression.util.dataset_generator import RegressionDataGenerator, create_tf_dataset
 
 
 def evaluate_model(model, test_dict):
@@ -40,8 +35,6 @@ def evaluate_model(model, test_dict):
 
 
 if __name__ == "__main__":
-    enable_logging()
-
     # Parameters
     # Length of the decision window
     window_length = 10 * 64  # 10 seconds
@@ -54,11 +47,19 @@ if __name__ == "__main__":
     training_log_filename = "training_log.csv"
     results_filename = 'eval.json'
 
+
+    # Get the path to the config gile
+    experiments_folder = os.path.dirname(__file__)
+    task_folder = os.path.dirname(experiments_folder)
+    config_path = os.path.join(task_folder, 'util', 'config.json')
+
+    # Load the config
+    with open(config_path) as fp:
+        config = json.load(fp)
+
     # Provide the path of the dataset
     # which is split already to train, val, test
-    experiments_folder = os.path.dirname(os.path.abspath(__file__))
-    root_folder = os.path.dirname(os.path.dirname(experiments_folder))
-    config = load_config(os.path.join(root_folder, "config.json"))
+
     data_folder = os.path.join(config["dataset_folder"], config["split_folder"])
     stimulus_features = ["envelope"]
     features = ["eeg"] + stimulus_features
@@ -69,42 +70,22 @@ if __name__ == "__main__":
 
     # create dilation model
     model = vlaai()
-    model.compile(
-        tf.keras.optimizers.Adam(), loss=pearson_loss, metrics=[pearson_metric]
-    )
+    model.compile(tf.keras.optimizers.Adam(), loss=pearson_loss, metrics=[pearson_metric])
     model_path = os.path.join(results_folder, "model.h5")
 
     if only_evaluate:
         model = tf.keras.models.load_model(model_path)
     else:
 
-        train_files = [
-            x
-            for x in glob.glob(os.path.join(data_folder, "train_-_*"))
-            if os.path.basename(x).split("_-_")[-1].split(".")[0] in features
-        ]
+        train_files = [x for x in glob.glob(os.path.join(data_folder, "train_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
         # Create list of numpy array files
-        dataset_train = create_tf_dataset(
-            RegressionDataGenerator(train_files, window_length),
-            window_length,
-            None,
-            hop_length,
-            batch_size,
-        )
+        train_generator = RegressionDataGenerator(train_files, window_length)
+        dataset_train = create_tf_dataset(train_generator, window_length, None, hop_length, batch_size)
 
         # Create the generator for the validation set
-        val_files = [
-            x
-            for x in glob.glob(os.path.join(data_folder, "val_-_*"))
-            if os.path.basename(x).split("_-_")[-1].split(".")[0] in features
-        ]
-        dataset_val = create_tf_dataset(
-            RegressionDataGenerator(val_files, window_length),
-            window_length,
-            None,
-            hop_length,
-            batch_size,
-        )
+        val_files = [x for x in glob.glob(os.path.join(data_folder, "val_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
+        val_generator = RegressionDataGenerator(val_files, window_length)
+        dataset_val = create_tf_dataset(val_generator, window_length, None, hop_length, batch_size)
 
         # Train the model
         model.fit(
@@ -113,33 +94,22 @@ if __name__ == "__main__":
             validation_data=dataset_val,
             callbacks=[
                 tf.keras.callbacks.ModelCheckpoint(model_path, save_best_only=True),
-                tf.keras.callbacks.CSVLogger(
-                    os.path.join(results_folder, training_log_filename)
-                ),
+                tf.keras.callbacks.CSVLogger(os.path.join(results_folder, training_log_filename)),
                 tf.keras.callbacks.EarlyStopping(patience=patience, restore_best_weights=True),
             ],
         )
 
     # Evaluate the model on test set
     # Create a dataset generator for each test subject
-    test_files = [
-        x
-        for x in glob.glob(os.path.join(data_folder, "test_-_*"))
-        if os.path.basename(x).split("_-_")[-1].split(".")[0] in features
-    ]
+    test_files = [x for x in glob.glob(os.path.join(data_folder, "test_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
     # Get all different subjects from the test set
     subjects = list(set([os.path.basename(x).split("_-_")[1] for x in test_files]))
     datasets_test = {}
     # Create a generator for each subject
     for sub in subjects:
         files_test_sub = [f for f in test_files if sub in os.path.basename(f)]
-        datasets_test[sub] = create_tf_dataset(
-            RegressionDataGenerator(files_test_sub, window_length),
-            window_length,
-            None,
-            hop_length,
-            1,
-        )
+        test_generator = RegressionDataGenerator(files_test_sub, window_length)
+        datasets_test[sub] = create_tf_dataset(test_generator, window_length, None, hop_length, 1)
 
     # Evaluate the model
     evaluation = evaluate_model(model, datasets_test)

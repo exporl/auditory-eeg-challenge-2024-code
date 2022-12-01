@@ -1,0 +1,8 @@
+{
+  "dataset_folder": "/mnt/esat/spchtemp/challenge",
+  "raw_eeg_folder": "raw_eeg",
+  "raw_stimuli_folder": "stimuli",
+  "preprocessed_eeg_folder": "preprocessed_eeg",
+  "preprocessed_stimuli_folder": "preprocessed_stimuli",
+  "split_folder": "split_data"
+}

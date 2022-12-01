@@ -36,17 +36,21 @@ The folder contains multiple folders (and `zip` files containing the same data a
 If you want to get started quickly, you can opt to only download this folder/zipfile.
 
    2. `preprocessed_eeg(.zip)` and `preprocessed_stimuli(.zip)` contain preprocessed EEG and stimuli files (envelope and mel features) respectively.
-At this stage data is not yet split into different sets and normalized. To go from this to the data in `split_data`, you will have to run [run_splitting_and_normalization.py](./run_splitting_and_normalization.py).
+At this stage data is not yet split into different sets and normalized. To go from this to the data in `split_data`, you will have to run the `speech_features.py` script ([task1_match_mismatch/create_data/speech_features.py](./task1_match_mismatch/create_data/speech_features.py) for task 1 and [task2_regression/create_data/speech_features.py](./task2_regression/create_data/speech_features.py) for task 2).
 
-   3. `raw_eeg(_x.zip)` and `stimuli(.zip)` contain the raw EEG and stimuli files. If you want to process the stimuli files, you can run [run_preprocessing.py](./run_preprocessing.py). The processed stimuli files will be stored in the `processed_stimuli`.
+   3. `raw_eeg(.zip)` and `stimuli(.zip)` contain the raw EEG and stimuli files. If you want to process the stimuli files, you can run `split_and_normalize.py` (([task1_match_mismatch/create_data/split_and_normalize.py](./task1_match_mismatch/create_data/split_and_normalize.py) for task 1 and [task2_regression/create_data/split_and_normalize.py](./task2_regression/create_data/split_and_normalize.py) for task 2). The processed stimuli files will be stored in the `processed_stimuli` folder.
 Currently, no preprocessing code is made available to preprocess EEG, so you will have to write your own implementation or use the precomputed `processed_eeg` folder.
 
-Make sure to download/unzip these folders into the same folder (e.g. `challenge_folder`).
+Make sure to download/unzip these folders into the same folder (e.g. `challenge_folder_task1`) for each task.
+Note that it is possible to use the same preprocessed (and split) dataset for both task 1 and task 2, but it is not required.
+
 
 ![data_diagram](./images/data_diagram.svg)
 
-## 3. Adjust the [config.json](./config.json) accordingly
-Adjust `dataset_folder` in [config.json](./config.json) from `null` to the absolute path to the folder containing all data (The `challenge_folder` from the previous point).
+## 3. Adjust the `config.json` accordingly
+
+Each task has a `config.json` defining the folder names and structure for the data (i.e. [task1_match_mismatch/util/config.json](./task1_match_mismatch/util/config.json) and [task2_regression/util/config.json](./task2_regression/util/config.json)).
+Adjust `dataset_folder` in the `config.json` file from `null` to the absolute path to the folder containing all data (The `challenge_folder_task_1` from the previous point).
   
 
 OK, you should be all setup now!
@@ -66,37 +70,19 @@ best model and evaluation results will be stored in a folder called
 By running [task1_match_mismatch/experiments/dilated_convolutional_model.py](./task1_match_mismatch/experiments/dilated_convolutional_model.py),
 you can train the dilated convolutional model introduced by Accou et al. [(2021a)](https://doi.org/10.23919/Eusipco47968.2020.9287417) and [(2021b)](https://doi.org/10.1088/1741-2552/ac33e9).
 
+Other models you might find interesting are [Decheveigné et al (2021)](https://www.sciencedirect.com/science/article/pii/S1053811918300338), [Monesi et al. (2020)](https://ieeexplore.ieee.org/abstract/document/9054000), [Monesi et al. (2021)](https://arxiv.org/abs/2106.09622),….
 
-
-## Task2: regression (reconstructing envelope from EEG)
+## Task2: Regression (reconstructing envelope from EEG)
 
 By running [task2_regression/experiments/linear_baseline.py](./task2_regression/experiments/linear_baseline.py), you can 
-train and evaluate a simple linear baseline model with Pearson correlation as a loss function, similar to the baseline model used in [Accou et al (2022)](https://www.biorxiv.org/content/10.1101/2022.09.28.509945)
+train and evaluate a simple linear baseline model with Pearson correlation as a loss function, similar to the baseline model used in [Accou et al (2022)](https://www.biorxiv.org/content/10.1101/2022.09.28.509945).
 
 By running [task2_regression/experiments/vlaai.py](./task2_regression/experiments/vlaai.py), you can train/evaluate
 the VLAAI model as proposed by [Accou et al (2022)](https://www.biorxiv.org/content/10.1101/2022.09.28.509945). You can find a pre-trained model at [VLAAI's github page](https://github.com/exporl/vlaai).
 
+Other models you might find interesting are: [Thornton et al. (2022)](https://iopscience.iop.org/article/10.1088/1741-2552/ac7976),...
 
-# Changing preprocessing
+# Previous version
 
-You can run the preprocessing for the stimuli using [run_preprocessing.py](./run_preprocessing.py),
-and subsequently split and/or normalize the data by running [run_splitting_and_normalization.py](./run_splitting_and_normalization.py).
-To see all builtin options, you can run these script with a `--help` flag, e.g.:
-```bash
-python3 run_preprocessing.py --help
-```
-
-You can add and modify the speech feature extraction, splitters and normalizers easily by:
-
-1. Deriving a class from the appropriate base class
-   1. `FeatureExtractor` in [util/stimulus_processing/feature_extraction/base.py](./util/stimulus_processing/feature_extraction/base.py) for feature extraction.
-   2. `Splitter` in [util/splitters/base.py](./util/splitters/base.py) for splitters.
-   3. `Normalizer` in for [util/normalizers/base.py](./util/normalizers/base.py) for normalizers.
-
-2. Adding the new class to the correct factory function
-   1. `speech_feature_factory` in [util/stimulus_processing/factory.py](./util/stimulus_processing/factory.py) for feature extraction.
-   2. `Splitter` in [util/splitters/factory.py](./util/splitters/factory.py) for splitters.
-   3. `Normalizer` in for [util/normalizers/factory.py](./util/normalizers/factory.py) for normalizers.
-
-Then you can use your newly defined class with [run_preprocessing.py](./run_preprocessing.py) and
-[run_splitting_and_normalization.py](./run_splitting_and_normalization.py).
+If you are still using a previous version of this example code, we recommend updating to this version, as the test-set code and data will be made compatible for this version.
+If you still like access to the previous version, you can find it [here](https://github.com/exporl/auditory-eeg-challenge-2023-code/tree/258b2d48bab4f2ac1da01b8c2aa30f6396063ff5)

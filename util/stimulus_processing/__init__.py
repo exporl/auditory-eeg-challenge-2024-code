@@ -1,1 +1,0 @@
-"""Stimulus processing tools."""
