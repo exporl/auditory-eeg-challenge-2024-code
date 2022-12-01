@@ -7,7 +7,6 @@ import os
 import numpy as np
 
 from task2_regression.util.envelope import calculate_envelope
-from task2_regression.util.mel_spectrogram import calculate_mel_spectrogram
 
 if __name__ == "__main__":
 
@@ -56,12 +55,5 @@ if __name__ == "__main__":
         else:
             print(f"Skipping {env_path} because it already exists")
 
-        # Mel
-        mel_path = os.path.join(output_stimuli_folder, filename.replace(".npz", "_mel.npy"))
-        if not os.path.exists(mel_path) or overwrite:
-            mel = calculate_mel_spectrogram(filepath)
-            np.save(mel_path, mel)
-        else:
-            print(f"Skipping {mel_path} because it already exists")
 
 

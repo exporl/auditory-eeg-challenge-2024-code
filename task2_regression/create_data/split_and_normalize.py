@@ -11,7 +11,7 @@ import numpy as np
 if __name__ == "__main__":
 
     # Arguments for splitting and normalizing
-    speech_features = ['envelope', 'mel']
+    speech_features = ['envelope']
     splits = [80, 10, 10]
     split_names = ['train', 'val', 'test']
     overwrite = False
