@@ -1,5 +1,5 @@
 {
-  "dataset_folder": "/esat/audioslave/mjalilpo/published_dataset/FINAL_MAPPING_C2DNN/jalil",
+  "dataset_folder": "path/to/dataset",
   "raw_eeg_folder": "raw_eeg",
   "raw_stimuli_folder": "stimuli",
   "preprocessed_eeg_folder": "preprocessed_eeg",

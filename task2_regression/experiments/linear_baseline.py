@@ -40,7 +40,7 @@ if __name__ == "__main__":
     window_length = 10 * 64  # 10 seconds
     # Hop length between two consecutive decision windows
     hop_length = 64
-    epochs = 2
+    epochs = 100
     patience = 5
     batch_size = 64
     only_evaluate = False
