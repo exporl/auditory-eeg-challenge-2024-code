@@ -68,7 +68,7 @@ if __name__ == "__main__":
     results_folder = os.path.join(experiments_folder, "results_vlaai")
     os.makedirs(results_folder, exist_ok=True)
 
-    # create dilation model
+    # create the model
     model = vlaai()
     model.compile(tf.keras.optimizers.Adam(), loss=pearson_loss, metrics=[pearson_metric])
     model_path = os.path.join(results_folder, "model.h5")

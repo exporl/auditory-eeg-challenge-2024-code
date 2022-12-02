@@ -14,7 +14,7 @@ if __name__ == "__main__":
     # Whether to overwrite already existing features
     overwrite = False
 
-    # Get the path to the config gile
+    # Get the path to the config file
     task_folder = os.path.dirname(os.path.dirname(__file__))
     config_path = os.path.join(task_folder, 'util', 'config.json')
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # Create the save directory if it didn't exist already
     os.makedirs(output_stimuli_folder, exist_ok=True)
 
-    # Find the stimuli file
+    # Find the stimuli files
     speech_files = glob.glob(os.path.join(source_stimuli_folder, "*.npz"))
 
     # Preprocess the stimuli

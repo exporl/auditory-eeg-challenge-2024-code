@@ -19,7 +19,7 @@ if __name__ == "__main__":
     # Calculate the split fraction
     split_fractions = [x/sum(splits) for x in splits]
 
-    # Get the path to the config gile
+    # Get the path to the config file
     task_folder = os.path.dirname(os.path.dirname(__file__))
     config_path = os.path.join(task_folder, 'util', 'config.json')
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
     # Create the output folder
     os.makedirs(split_data_folder, exist_ok=True)
 
-    # FInd all subjects
+    # Find all subjects
     all_subjects = glob.glob(os.path.join(processed_eeg_folder, "sub*"))
     nb_subjects = len(all_subjects)
     print(f"Found {nb_subjects} subjects to split/normalize")
@@ -73,7 +73,7 @@ if __name__ == "__main__":
                     stimulus_filename_parts[0] + "_" + feature_name + ".npy",
                 )
                 feature = np.load(stimulus_feature_path)
-                # Calculate shortest length
+                # Calculate the shortest length
                 shortest_length = min(feature.shape[0], shortest_length)
                 # Update all_data_for_recording
                 all_data_for_recording[feature_name] = feature

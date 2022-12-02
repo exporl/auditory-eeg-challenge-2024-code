@@ -14,7 +14,7 @@ if __name__ == "__main__":
     speech_features = ['envelope']
     splits = [80, 10, 10]
     split_names = ['train', 'val', 'test']
-    overwrite = False
+    overwrite = True
 
     # Calculate the split fraction
     split_fractions = [x/sum(splits) for x in splits]
@@ -73,7 +73,7 @@ if __name__ == "__main__":
                     stimulus_filename_parts[0] + "_" + feature_name + ".npy",
                 )
                 feature = np.load(stimulus_feature_path)
-                # Calculate shortest length
+                # Calculate the shortest length
                 shortest_length = min(feature.shape[0], shortest_length)
                 # Update all_data_for_recording
                 all_data_for_recording[feature_name] = feature
