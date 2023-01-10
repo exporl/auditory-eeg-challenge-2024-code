@@ -65,12 +65,12 @@ if __name__ == '__main__':
     # Create envelope of segments if it has not already been created
     if not os.path.isdir(envelope_dir):
         os.makedirs(envelope_dir, exist_ok=True)
-        for stimulus_seg in glob.glob(os.path.join(stimuli_dir, '*.npz')):
-            base_name = os.path.basename(stimulus_seg).split('.')[0]
-            if not os.path.exists(os.path.join(envelope_dir, base_name + '.npy')):
-                env = envelope.calculate_envelope(stimulus_seg)
-                target_path = os.path.join(envelope_dir, base_name + '.npz')
-                np.savez(target_path, envelope=env)
+    for stimulus_seg in glob.glob(os.path.join(stimuli_dir, '*.npz')):
+        base_name = os.path.basename(stimulus_seg).split('.')[0]
+        if not os.path.exists(os.path.join(envelope_dir, base_name + '.npz')):
+            env = envelope.calculate_envelope(stimulus_seg)
+            target_path = os.path.join(envelope_dir, base_name + '.npz')
+            np.savez(target_path, envelope=env)
 
 
     # Define and load the pretrained model
