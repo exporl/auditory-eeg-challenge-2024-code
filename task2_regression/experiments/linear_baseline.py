@@ -4,9 +4,13 @@ import json
 import logging
 import os
 import tensorflow as tf
+import scipy.stats
+import numpy as np
 
-from task2_regression.models.linear import simple_linear_model
-from task2_regression.util.dataset_generator import RegressionDataGenerator, create_tf_dataset
+import sys
+sys.path.append('/esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code')
+from task2_regression.models.linear import simple_linear_model, pearson_loss_cut, pearson_metric_cut
+from util.dataset_generator import DataGenerator, create_tf_dataset
 
 
 def evaluate_model(model, test_dict):
@@ -28,10 +32,16 @@ def evaluate_model(model, test_dict):
     evaluation = {}
     for subject, ds_test in test_dict.items():
         logging.info(f"Scores for subject {subject}:")
+           # evaluate model
         results = model.evaluate(ds_test, verbose=2)
         metrics = model.metrics_names
         evaluation[subject] = dict(zip(metrics, results))
+
+
+        # metrics = model.metrics_names
+        # evaluation[subject] = dict(zip(metrics, results))
     return evaluation
+
 
 
 if __name__ == "__main__":
@@ -43,7 +53,7 @@ if __name__ == "__main__":
     epochs = 100
     patience = 5
     batch_size = 64
-    only_evaluate = False
+    only_evaluate = True
     training_log_filename = "training_log.csv"
     results_filename = 'eval.json'
 
@@ -51,7 +61,8 @@ if __name__ == "__main__":
     # Get the path to the config gile
     experiments_folder = os.path.dirname(__file__)
     task_folder = os.path.dirname(experiments_folder)
-    config_path = os.path.join(task_folder, 'util', 'config.json')
+    util_folder = os.path.join(os.path.dirname(task_folder), "util")
+    config_path = os.path.join(util_folder, 'config.json')
 
     # Load the config
     with open(config_path) as fp:
@@ -61,7 +72,7 @@ if __name__ == "__main__":
     # which is split already to train, val, test
 
     data_folder = os.path.join(config["dataset_folder"], config["split_folder"])
-    stimulus_features = ["envelope"]
+    stimulus_features = ["mel"]
     features = ["eeg"] + stimulus_features
 
     # Create a directory to store (intermediate) results
@@ -74,18 +85,19 @@ if __name__ == "__main__":
     model_path = os.path.join(results_folder, "model.h5")
 
     if only_evaluate:
-        model = tf.keras.models.load_model(model_path)
+        # load weights
+        model.load_weights(model_path)
     else:
 
         train_files = [x for x in glob.glob(os.path.join(data_folder, "train_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
         # Create list of numpy array files
-        train_generator = RegressionDataGenerator(train_files, window_length)
-        dataset_train = create_tf_dataset(train_generator, window_length, None, hop_length, batch_size)
+        train_generator = DataGenerator(train_files, window_length)
+        dataset_train = create_tf_dataset(train_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 28))
 
         # Create the generator for the validation set
         val_files = [x for x in glob.glob(os.path.join(data_folder, "val_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
-        val_generator = RegressionDataGenerator(val_files, window_length)
-        dataset_val = create_tf_dataset(val_generator, window_length, None, hop_length, batch_size)
+        val_generator = DataGenerator(val_files, window_length)
+        dataset_val = create_tf_dataset(val_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 28))
 
         # Train the model
         model.fit(
@@ -108,8 +120,8 @@ if __name__ == "__main__":
     # Create a generator for each subject
     for sub in subjects:
         files_test_sub = [f for f in test_files if sub in os.path.basename(f)]
-        test_generator = RegressionDataGenerator(files_test_sub, window_length)
-        datasets_test[sub] = create_tf_dataset(test_generator, window_length, None, hop_length, 1)
+        test_generator = DataGenerator(files_test_sub, window_length)
+        datasets_test[sub] = create_tf_dataset(test_generator, window_length, None, hop_length, batch_size=64, data_types=(tf.float32, tf.float32), feature_dims=(64, 28))
 
     # Evaluate the model
     evaluation = evaluate_model(model, datasets_test)

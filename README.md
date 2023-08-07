@@ -1,6 +1,6 @@
-Auditory-eeg-challenge-2023-code
+Auditory-eeg-challenge-2024-code
 ================================
-This is the codebase for the [2023 ICASSP Auditory EEG challenge](https://exporl.github.io/auditory-eeg-challenge-2023).
+This is the codebase for the [2024 ICASSP Auditory EEG challenge](https://exporl.github.io/auditory-eeg-challenge).
 This codebase contains baseline models and code to preprocess stimuli for both tasks.
 
 # Prerequisites
@@ -14,10 +14,10 @@ Steps to get a working setup:
 ## 1. Clone this repository and install the [requirements.txt](requirements.txt)
 ```bash
 # Clone this repository
-git clone https://github.com/exporl/auditory-eeg-challenge-2023-code
+git clone https://github.com/exporl/auditory-eeg-challenge-2024-code
 
 # Go to the root folder
-cd auditory-eeg-challenge-2023-code
+cd auditory-eeg-challenge-2024-code
 
 # Optional: install a virtual environment
 python3 -m venv venv # Optional
@@ -49,7 +49,7 @@ Note that it is possible to use the same preprocessed (and split) dataset for bo
 
 ## 3. Adjust the `config.json` accordingly
 
-Each task has a `config.json` defining the folder names and structure for the data (i.e. [task1_match_mismatch/util/config.json](./task1_match_mismatch/util/config.json) and [task2_regression/util/config.json](./task2_regression/util/config.json)).
+There is a general `config.json` defining the folder names and structure for the data (i.e. [util/config.json](./util/config.json) ).
 Adjust `dataset_folder` in the `config.json` file from `null` to the absolute path to the folder containing all data (The `challenge_folder_task_1` from the previous point).
   
 
@@ -72,7 +72,7 @@ you can train the dilated convolutional model introduced by Accou et al. [(2021a
 
 Other models you might find interesting are [Decheveigné et al (2021)](https://www.sciencedirect.com/science/article/pii/S1053811918300338), [Monesi et al. (2020)](https://ieeexplore.ieee.org/abstract/document/9054000), [Monesi et al. (2021)](https://arxiv.org/abs/2106.09622),….
 
-## Task2: Regression (reconstructing envelope from EEG)
+## Task2: Regression (reconstructing spectrogram from EEG)
 
 By running [task2_regression/experiments/linear_baseline.py](./task2_regression/experiments/linear_baseline.py), you can 
 train and evaluate a simple linear baseline model with Pearson correlation as a loss function, similar to the baseline model used in [Accou et al (2022)](https://www.biorxiv.org/content/10.1101/2022.09.28.509945).
@@ -81,8 +81,3 @@ By running [task2_regression/experiments/vlaai.py](./task2_regression/experiment
 the VLAAI model as proposed by [Accou et al (2022)](https://www.biorxiv.org/content/10.1101/2022.09.28.509945). You can find a pre-trained model at [VLAAI's github page](https://github.com/exporl/vlaai).
 
 Other models you might find interesting are: [Thornton et al. (2022)](https://iopscience.iop.org/article/10.1088/1741-2552/ac7976),...
-
-# Previous version
-
-If you are still using a previous version of this example code, we recommend updating to this version, as the test-set code and data will be made compatible for this version.
-If you still like access to the previous version, you can find it [here](https://github.com/exporl/auditory-eeg-challenge-2023-code/tree/258b2d48bab4f2ac1da01b8c2aa30f6396063ff5)

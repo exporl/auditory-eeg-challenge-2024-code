@@ -1,4 +1,4 @@
-"""Code for the dataset_generator for task1."""
+"""Code for the dataset_generator for both tasks."""
 import itertools
 import os
 
@@ -57,8 +57,8 @@ def create_tf_dataset(
     batch_equalizer_fn=None,
     hop_length=64,
     batch_size=64,
-    data_types=(tf.float32, tf.float32, tf.float32),
-    feature_dims=(64, 1, 1)
+    data_types=(tf.float32, tf.float32, tf.float32), # (tf.float32, tf.float32, tf.float32) for match-mismatch, (tf.float32, tf.float32) for regression
+    feature_dims=(64, 28, 28) # (64 EEG channels, 28 speech channels, 28 speech channels) for match-mismatch, (64 EEG channels, 28 speech channel) for regression
 ):
     """Creates a tf.data.Dataset.
 
@@ -122,16 +122,15 @@ def create_tf_dataset(
 
     return dataset
 
+# spacing = for match-mismatch
 
-
-class MatchMismatchDataGenerator:
+class DataGenerator:
     """Generate data for the Match/Mismatch task."""
 
     def __init__(
         self,
         files,
         window_length,
-        spacing
     ):
         """Initialize the DataGenerator.
 
@@ -146,7 +145,7 @@ class MatchMismatchDataGenerator:
         """
         self.window_length = window_length
         self.files = self.group_recordings(files)
-        self.spacing = spacing
+
 
     def group_recordings(self, files):
         """Group recordings and corresponding stimuli.
@@ -208,6 +207,52 @@ class MatchMismatchDataGenerator:
     def on_epoch_end(self):
         """Change state at the end of an epoch."""
         np.random.shuffle(self.files)
+
+    def prepare_data(self, data):
+        return data
+        """Creates mismatch (imposter) envelope.
+
+        Parameters
+        ----------
+        data: Sequence[numpy.ndarray]
+            Data to create an imposter for.
+
+        Returns
+        -------
+        tuple (numpy.ndarray, numpy.ndarray, numpy.ndarray, ...)
+            (EEG, matched stimulus feature, mismatched stimulus feature, ...).
+        """
+        eeg = data[0]
+        new_length = eeg.shape[0] - self.window_length - self.spacing
+        resulting_data = [eeg[:new_length, ...]]
+        for stimulus_feature in data[1:]:
+            match_feature = stimulus_feature[:new_length, ...]
+            mismatch_feature = stimulus_feature[
+                self.spacing + self.window_length:, ...
+            ]
+            resulting_data += [match_feature, mismatch_feature]
+        return resulting_data
+
+class MatchMismatchDataGenerator(DataGenerator):
+    def __init__(
+        self,
+        files,
+        window_length,
+        spacing,
+    ):
+        """Initialize the DataGenerator.
+
+        Parameters
+        ----------
+        files: Sequence[Union[str, pathlib.Path]]
+            Files to load.
+        window_length: int
+            Length of the decision window.
+        spacing: int
+            Spacing between matched and mismatched samples
+        """
+        super().__init__(files, window_length)
+        self.spacing = spacing
 
     def prepare_data(self, data):
         """Creates mismatch (imposter) envelope.

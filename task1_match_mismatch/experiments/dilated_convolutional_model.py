@@ -6,7 +6,7 @@ import os
 import tensorflow as tf
 
 from task1_match_mismatch.models.dilated_convolutional_model import dilation_model
-from task1_match_mismatch.util.dataset_generator import MatchMismatchDataGenerator, default_batch_equalizer_fn, create_tf_dataset
+from util.dataset_generator import MatchMismatchDataGenerator, default_batch_equalizer_fn, create_tf_dataset
 
 
 def evaluate_model(model, test_dict):

@@ -4,3 +4,4 @@ scipy
 brian2
 brian2hears
 librosa
+brain_pipe
