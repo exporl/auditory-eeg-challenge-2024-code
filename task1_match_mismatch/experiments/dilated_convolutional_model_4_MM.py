@@ -63,8 +63,8 @@ if __name__ == "__main__":
             training_log_filename = "training_log_{}_{}.csv".format(number_mismatch, window_length_s)
             results_filename = 'eval_{}_{}_s.json'.format(number_mismatch, window_length_s)
 
-            # Get the path to the config gile
-            experiments_folder = "/users/spraak/cpuffay/auditory-eeg-challenge-2023-code/task1_match_mismatch/experiments"
+            # Get the path to the experiment folder 
+            experiments_folder = "../auditory-eeg-challenge-2023-code/task1_match_mismatch/experiments"
             #experiments_folder = os.getcwd()
             task_folder = os.path.dirname(experiments_folder)
             config_path = os.path.join(task_folder, 'util', 'config.json')
