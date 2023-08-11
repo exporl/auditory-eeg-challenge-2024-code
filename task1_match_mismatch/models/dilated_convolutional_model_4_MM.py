@@ -1,7 +1,7 @@
-"""Default dilation model."""
+"""4 mismatched segments dilation model."""
 import tensorflow as tf
 
-def dilation_model(
+def dilation_model_4_MM(
     time_window=None,
     eeg_input_dimension=64,
     env_input_dimension=1,
@@ -13,7 +13,7 @@ def dilation_model(
     compile=True,
     inputs=tuple(),
 ):
-    """Convolutional dilation model.
+    """Convolutional dilation model with 4 mismatched segments.
 
     Code was taken and adapted from
     https://github.com/exporl/eeg-matching-eusipco2020
@@ -47,14 +47,14 @@ def dilation_model(
 
     Returns
     -------
-    tf.Modelnumber_of_mismatch
+    tf.Model
         The dilation model
 
 
     References
     ----------
     Accou, B., Jalilpour Monesi, M., Montoya, J., Van hamme, H. & Francart, T.
-    Modeling the relationship betnumber_mismatchween acoustic stimulus and EEG with a dilated
+    Modeling the relationship between acoustic stimulus and EEG with a dilated
     convolutional neural network. In 2020 28th European Signal Processing
     Conference (EUSIPCO), 1175–1179, DOI: 10.23919/Eusipco47968.2020.9287417
     (2021). ISSN: 2076-1465.
@@ -71,6 +71,9 @@ def dilation_model(
         eeg = tf.keras.layers.Input(shape=[time_window, eeg_input_dimension])
         env1 = tf.keras.layers.Input(shape=[time_window, env_input_dimension])
         env2 = tf.keras.layers.Input(shape=[time_window, env_input_dimension])
+        env3 = tf.keras.layers.Input(shape=[time_window, env_input_dimension])
+        env4 = tf.keras.layers.Input(shape=[time_window, env_input_dimension])
+        env5 = tf.keras.layers.Input(shape=[time_window, env_input_dimension])
 
     # Activations to apply
     if isinstance(activation, str):
@@ -80,6 +83,10 @@ def dilation_model(
 
     env_proj_1 = env1
     env_proj_2 = env2
+    env_proj_3 = env3
+    env_proj_4 = env4
+    env_proj_5 = env5
+
     # Spatial convolution
     eeg_proj_1 = tf.keras.layers.Conv1D(spatial_filters, kernel_size=1)(eeg)
 
@@ -104,24 +111,32 @@ def dilation_model(
         )
         env_proj_1 = env_proj_layer(env_proj_1)
         env_proj_2 = env_proj_layer(env_proj_2)
+        env_proj_3 = env_proj_layer(env_proj_3)
+        env_proj_4 = env_proj_layer(env_proj_4)
+        env_proj_5 = env_proj_layer(env_proj_5)
+
 
     # Comparison
     cos1 = tf.keras.layers.Dot(1, normalize=True)([eeg_proj_1, env_proj_1])
     cos2 = tf.keras.layers.Dot(1, normalize=True)([eeg_proj_1, env_proj_2])
-
+    cos3 = tf.keras.layers.Dot(1, normalize=True)([eeg_proj_1, env_proj_3])
+    cos4 = tf.keras.layers.Dot(1, normalize=True)([eeg_proj_1, env_proj_4])
+    cos5 = tf.keras.layers.Dot(1, normalize=True)([eeg_proj_1, env_proj_5])
 
     linear_proj_sim = tf.keras.layers.Dense(1, activation="linear")
 
     # Linear projection of similarity matrices
     cos1_proj = linear_proj_sim(tf.keras.layers.Flatten()(cos1))
     cos2_proj = linear_proj_sim(tf.keras.layers.Flatten()(cos2))
-
+    cos3_proj = linear_proj_sim(tf.keras.layers.Flatten()(cos3))
+    cos4_proj = linear_proj_sim(tf.keras.layers.Flatten()(cos4))
+    cos5_proj = linear_proj_sim(tf.keras.layers.Flatten()(cos5))
 
     # Classification
-    out = tf.keras.activations.softmax((tf.keras.layers.Concatenate()([cos1_proj, cos2_proj])))
+    out = tf.keras.activations.softmax((tf.keras.layers.Concatenate()([cos1_proj, cos2_proj, cos3_proj, cos4_proj, cos5_proj])))
 
 
-    model = tf.keras.Model(inputs=[eeg, env1, env2], outputs=[out])
+    model = tf.keras.Model(inputs=[eeg, env1, env2, env3, env4, env5], outputs=[out])
 
     if compile:
         model.compile(
