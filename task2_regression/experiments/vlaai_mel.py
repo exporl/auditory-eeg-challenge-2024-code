@@ -44,13 +44,13 @@ def evaluate_model(model, test_dict):
 if __name__ == "__main__":
     # Parameters
     # Length of the decision window
-    fs= 1024 
+    fs= 64
     window_length = 5 * fs  # 10 seconds
     # Hop length between two consecutive decision windows
     hop_length = 1*fs
     epochs = 100
-    patience = 5
-    batch_size = 4
+    patience = 10
+    batch_size = 8
     only_evaluate = False
     training_log_filename = "training_log.csv"
     results_filename = 'eval.json'
@@ -69,13 +69,13 @@ if __name__ == "__main__":
     # Provide the path of the dataset
     # which is split already to train, val, test
 
-    data_folder = os.path.join(config["dataset_folder"],config["derivatives_folder"],  config["split_folder_1024"])
-    stimulus_features = ["stimulus"]
+    data_folder = os.path.join(config["dataset_folder"],config["derivatives_folder"],  config[f"split_folder_{fs}"])
+    stimulus_features = ["mel"]
     features = ["eeg"] + stimulus_features
 
 
     # Create a directory to store (intermediate) results
-    results_folder = os.path.join(experiments_folder, "results_vlaai_stimulus")
+    results_folder = os.path.join(experiments_folder, f"results_vlaai_mel_{fs}")
     os.makedirs(results_folder, exist_ok=True)
 
     # create the model
@@ -89,14 +89,14 @@ if __name__ == "__main__":
         train_files = [x for x in glob.glob(os.path.join(data_folder, "train_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
         # Create list of numpy array files
         train_generator = DataGenerator(train_files, window_length)
-        dataset_train = create_tf_dataset(train_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
+        dataset_train = create_tf_dataset(train_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
         # dataset_train = create_tf_dataset_light(train_files, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
 
 
         # Create the generator for the validation set
         val_files = [x for x in glob.glob(os.path.join(data_folder, "val_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features ]
         val_generator = DataGenerator(val_files, window_length)
-        dataset_val = create_tf_dataset(val_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
+        dataset_val = create_tf_dataset(val_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
         # dataset_val = create_tf_dataset(create_tf_dataset_light, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
 
         # Train the model
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     for sub in subjects:
         files_test_sub = [f for f in test_files if sub in os.path.basename(f)]
         test_generator = DataGenerator(files_test_sub, window_length)
-        datasets_test[sub] = create_tf_dataset(test_generator, window_length, None, hop_length,    batch_size=64, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
+        datasets_test[sub] = create_tf_dataset(test_generator, window_length, None, hop_length,    batch_size=64, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
 
     evaluation = evaluate_model(model, datasets_test)
 

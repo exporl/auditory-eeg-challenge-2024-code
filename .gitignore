@@ -162,3 +162,7 @@ cython_debug/
 
 # Specific for tis project
 task*/experiments/results*/
+*condor*
+.err
+.out
+.log

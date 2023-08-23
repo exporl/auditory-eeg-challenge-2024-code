@@ -9,7 +9,8 @@ from typing import Any, Dict, Sequence
 
 import librosa
 import numpy as np
-import scipy.signal
+import math
+import scipy.signal.windows
 from brain_pipe.dataloaders.path import GlobLoader
 from brain_pipe.pipeline.default import DefaultPipeline
 from brain_pipe.preprocessing.brain.artifact import (
@@ -32,9 +33,12 @@ from brain_pipe.preprocessing.brain.trigger import (
 from brain_pipe.preprocessing.filter import SosFiltFilt
 from brain_pipe.preprocessing.resample import ResamplePoly
 from brain_pipe.preprocessing.stimulus.audio.envelope import GammatoneEnvelope
+from brain_pipe.preprocessing.stimulus.audio.spectrogram import LibrosaMelSpectrogram
+
 from brain_pipe.preprocessing.stimulus.load import LoadStimuli
 from brain_pipe.runner.default import DefaultRunner
-from brain_pipe.save.default import DefaultSave
+# from brain_pipe.save.default import DefaultSave
+from mel import DefaultSave
 from brain_pipe.utils.log import default_logging, DefaultFormatter
 from brain_pipe.utils.path import BIDSStimulusGrouper
 
@@ -204,12 +208,42 @@ def bids_filename_fn(data_dict, feature_name, set_name=None):
 
     return os.path.join(subject, session, filename + ".npy")
 
+def get_window_function(arg, data_dict):
+    return scipy.signal.windows.hamming(int(0.025 * data_dict["stimulus_sr"]))
+def get_hop_length(arg, data_dict):
+    return int((1 / 500) * data_dict["stimulus_sr"])
+def get_n_fft(arg, data_dict):
+    return int(math.pow(2, math.ceil(math.log2(int(0.025 * data_dict["stimulus_sr"])))))
+def get_win_length(arg, data_dict):
+    return int(0.025 * data_dict["stimulus_sr"])
+
+def get_default_librosa_kwargs():
+
+    librosa_kwargs = {
+        "window": get_window_function,
+        "hop_length": get_hop_length,
+        "n_fft": get_n_fft,
+        "win_length": get_win_length,
+        # "window": lambda arg, data_dict: scipy.signal.windows.hamming(int(0.025 * data_dict["stimulus_sr"])),
+        # "hop_length": lambda arg, data_dict: int((1 / 1024) * data_dict["stimulus_sr"]),
+        # "n_fft": lambda arg, data_dict: int(
+        #     math.pow(2, math.ceil(math.log2(int(0.025 * data_dict["stimulus_sr"]))))),
+        # "win_length": lambda arg, data_dict: int(0.025 * data_dict["stimulus_sr"]),
+        "fmin": 0,
+        "fmax": 1024,
+        "htk": True,
+        "n_mels": 10,
+        "center": False,
+        "norm": None,
+        "power": 1.0
+    }
+    return librosa_kwargs
 
 def run_preprocessing_pipeline(
         root_dir,
         preprocessed_stimuli_dir,
         preprocessed_eeg_dir,
-        nb_processes=-1,
+        nb_processes=4,
         overwrite=False,
         log_path="sparrKULee.log",
 ):
@@ -262,11 +296,11 @@ def run_preprocessing_pipeline(
     stimulus_steps = DefaultPipeline(
         steps=[
             LoadStimuli(load_fn=temp_stimulus_load_fn),
-            GammatoneEnvelope(),
-            ResamplePoly(64, "envelope_data", "stimulus_sr"),
+            LibrosaMelSpectrogram(librosa_kwargs=get_default_librosa_kwargs()),
+            ResamplePoly(256, data_key = ['spectrogram_data', 'stimulus_data'], sampling_frequency_key = ['spectrogram_sr', 'stimulus_sr'], axis=0),
             DefaultSave(
                 preprocessed_stimuli_dir,
-                to_save={'envelope': 'envelope_data'},
+                to_save={'mel': 'spectrogram_data', 'stimulus': 'stimulus_data' },
                 overwrite=overwrite
             ),
             DefaultSave(preprocessed_stimuli_dir, overwrite=overwrite),
@@ -293,9 +327,9 @@ def run_preprocessing_pipeline(
         InterpolateArtifacts(),
         AlignPeriodicBlockTriggers(biosemi_trigger_processing_fn),
         SplitEpochs(),
-        ArtifactRemovalMWF(),
+        # ArtifactRemovalMWF(),
         CommonAverageRereference(),
-        ResamplePoly(64, axis=1),
+        ResamplePoly(256, axis=1),
         DefaultSave(
             preprocessed_eeg_dir,
             {"eeg": "data"},
@@ -336,10 +370,10 @@ if __name__ == "__main__":
     dataset_folder = config["dataset_folder"]
     derivatives_folder = os.path.join(dataset_folder, config["derivatives_folder"])
     preprocessed_stimuli_folder = os.path.join(
-        derivatives_folder, config["preprocessed_stimuli_folder"]
+        derivatives_folder, f'{config["preprocessed_stimuli_folder"]}_256'
     )
     preprocessed_eeg_folder = os.path.join(
-        derivatives_folder, config["preprocessed_eeg_folder"]
+        derivatives_folder, f'{config["preprocessed_eeg_folder"]}_256'
     )
     default_log_folder = os.path.dirname(os.path.abspath(__file__))
 
@@ -348,7 +382,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--nb_processes",
         type=int,
-        default=1,
+        default=4,
         help="Number of processes to use for the preprocessing. "
              "The default is to use all available cores (-1).",
     )

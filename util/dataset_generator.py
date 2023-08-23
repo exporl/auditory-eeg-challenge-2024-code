@@ -41,11 +41,12 @@ def default_batch_equalizer_fn(*args):
         all_features += [stimulus_feature1, stimulus_feature2]
     labels = tf.concat(
         [
-            tf.tile(tf.constant([[0]]), [tf.shape(eeg)[0], 1]),
-            tf.tile(tf.constant([[1]]), [tf.shape(eeg)[0], 1]),
+            tf.tile(tf.constant([0]), [tf.shape(eeg)[0]]),
+            tf.tile(tf.constant([1]), [tf.shape(eeg)[0]]),
         ],
         axis=0,
     )
+    labels = tf.one_hot(labels, depth=2)
 
     # print(new_eeg.shape, env1.shape, env2.shape, labels.shape)
     return tuple(all_features), labels
@@ -57,8 +58,8 @@ def create_tf_dataset(
     batch_equalizer_fn=None,
     hop_length=64,
     batch_size=64,
-    data_types=(tf.float32, tf.float32, tf.float32), # (tf.float32, tf.float32, tf.float32) for match-mismatch, (tf.float32, tf.float32) for regression
-    feature_dims=(64, 28, 28) # (64 EEG channels, 28 speech channels, 28 speech channels) for match-mismatch, (64 EEG channels, 28 speech channel) for regression
+    data_types=(tf.float32, tf.float32), # (tf.float32, tf.float32, tf.float32) for match-mismatch, (tf.float32, tf.float32) for regression
+    feature_dims=(64, 1) # (64 EEG channels, 28 speech channels, 28 speech channels) for match-mismatch, (64 EEG channels, 28 speech channel) for regression
 ):
     """Creates a tf.data.Dataset.
 
@@ -104,25 +105,196 @@ def create_tf_dataset(
         lambda *args: [
             tf.signal.frame(arg, window_length, hop_length, axis=0)
             for arg in args
-        ]
+        ],
+        num_parallel_calls=tf.data.AUTOTUNE
     )
 
+    if batch_equalizer_fn is not None:
+        # map second argument to shifted version
+        # randomly shuffle the second argument onto a third position
+        dataset = dataset.map(
+            lambda *args: [
+                args[0],
+                args[1],
+                tf.roll(args[1], shift=1, axis=0),
+                # tf.random.shuffle(args[1]),
+            ],
+            num_parallel_calls=tf.data.AUTOTUNE
+        )
     # batch data
     dataset = dataset.interleave(
         lambda *args: tf.data.Dataset.from_tensor_slices(args),
-        cycle_length=4,
-        block_length=16,
+        cycle_length=8,
+        block_length=1,
+        num_parallel_calls=tf.data.AUTOTUNE,
     )
     if batch_size is not None:
         dataset = dataset.batch(batch_size, drop_remainder=True)
 
     if batch_equalizer_fn is not None:
         # Create the labels and make sure classes are balanced
-        dataset = dataset.map(batch_equalizer_fn)
+        dataset = dataset.map(batch_equalizer_fn,
+                              num_parallel_calls=tf.data.AUTOTUNE)
 
     return dataset
 
 # spacing = for match-mismatch
+
+
+
+
+
+def group_recordings(files):
+    """Group recordings and corresponding stimuli.
+
+    Parameters
+    ----------
+    files : Sequence[Union[str, pathlib.Path]]
+        List of filepaths to preprocessed and split EEG and speech features
+
+    Returns
+    -------
+    list
+        Files grouped by the self.group_key_fn and subsequently sorted
+        by the self.feature_sort_fn.
+    """
+    new_files = []
+    grouped = itertools.groupby(sorted(files), lambda x: "_-_".join(os.path.basename(x).split("_-_")[:3]))
+    for recording_name, feature_paths in grouped:
+        new_files += [sorted(feature_paths, key=lambda x: "0" if x == "eeg" else x)]
+    return new_files
+#
+# def loadFunc(i, files):
+#     i = i.numpy()
+#     data = []
+#     for feature in files[i]:
+#         f = np.load(feature).astype(np.float32)
+#         if f.ndim == 1:
+#             f = f[:, None]
+#
+#         data += [f]
+#     # data = self.prepare_data(data)
+#     return tuple(tf.constant(x) for x in data)
+def create_tf_dataset_light(
+    files,
+    window_length,
+    batch_equalizer_fn=None,
+    hop_length=64,
+    batch_size=64,
+    data_types=(tf.float32, tf.float32), # (tf.float32, tf.float32, tf.float32) for match-mismatch, (tf.float32, tf.float32) for regression
+    feature_dims=(64, 1) # (64 EEG channels, 28 speech channels, 28 speech channels) for match-mismatch, (64 EEG channels, 28 speech channel) for regression
+):
+    """Creates a tf.data.Dataset.
+
+    This will be used to create a dataset generator that will
+    pass windowed data to a model in both tasks.
+
+    Parameters
+    ---------
+    data_generator: DataGenerator
+        A data generator.
+    window_length: int
+        Length of the decision window in samples.
+    batch_equalizer_fn: Callable
+        Function that will be applied on the data after batching (using
+        the `map` method from tf.data.Dataset). In the match/mismatch task,
+        this function creates the imposter segments and labels.
+    hop_length: int
+        Hop length between two consecutive decision windows.
+    batch_size: Optional[int]
+        If not None, specifies the batch size. In the match/mismatch task,
+        this amount will be doubled by the default_batch_equalizer_fn
+    data_types: Union[Sequence[tf.dtype], tf.dtype]
+        The data types that the individual features of data_generator should
+        be cast to. If you only specify a single datatype, it will be chosen
+        for all EEG/speech features.
+
+    Returns
+    -------
+    tf.data.Dataset
+        A Dataset object that generates data to train/evaluate models
+        efficiently
+    """
+
+    sorted_files = group_recordings(files)
+
+    data_generator = list(range(len(sorted_files)))  # creates an index
+
+    def loadFunc(i):
+        i = i.numpy()
+        data = []
+        for feature in sorted_files[i]:
+            f = np.load(feature).astype(np.float32)
+            if f.ndim == 1:
+                f = f[:, None]
+
+            data += [f]
+        # data = self.prepare_data(data)
+        return tuple(tf.constant(x) for x in data)
+
+    # create tf dataset from generator
+    dataset = tf.data.Dataset.from_generator(
+        lambda : data_generator,
+        output_signature=tf.TensorSpec(shape=(None), dtype = tf.int32)
+    )
+        #tuple(
+        #    tf.TensorSpec(shape=(None, x), dtype=data_types[index])
+        #    for index, x in enumerate(feature_dims)
+        #),
+
+    dataset = dataset.shuffle(buffer_size = len(data_generator),
+                              reshuffle_each_iteration=True)
+
+    dataset = dataset.map(lambda i: tf.py_function(func=loadFunc,
+                                                   inp=[i],
+                                                   Tout =tuple(
+                                                       tf.TensorSpec(shape=(None, x), dtype=data_types[index])
+                                                       for index, x in enumerate(feature_dims))
+                                                   ),
+                          num_parallel_calls=tf.data.AUTOTUNE
+                          )
+    # window dataset
+    dataset = dataset.map(
+        lambda *args: [
+            tf.signal.frame(arg, window_length, hop_length, axis=0)
+            for arg in args
+        ],
+        num_parallel_calls=tf.data.AUTOTUNE
+    )
+
+    if batch_equalizer_fn is not None:
+        # map second argument to shifted version
+        # randomly shuffle the second argument onto a third position
+        dataset = dataset.map(
+            lambda *args: [
+                args[0],
+                args[1],
+                tf.roll(args[1], shift=1, axis=0),
+                # tf.random.shuffle(args[1]),
+            ],
+            num_parallel_calls=tf.data.AUTOTUNE
+        )
+    # batch data
+    dataset = dataset.interleave(
+        lambda *args: tf.data.Dataset.from_tensor_slices(args),
+        cycle_length=8,
+        block_length=1,
+        num_parallel_calls=tf.data.AUTOTUNE,
+    )
+    if batch_size is not None:
+        dataset = dataset.batch(batch_size, drop_remainder=True)
+
+    if batch_equalizer_fn is not None:
+        # Create the labels and make sure classes are balanced
+        dataset = dataset.map(batch_equalizer_fn,
+                              num_parallel_calls=tf.data.AUTOTUNE)
+
+    return dataset
+
+# spacing = for match-mismatch
+
+
+
 
 class DataGenerator:
     """Generate data for the Match/Mismatch task."""
@@ -185,7 +357,11 @@ class DataGenerator:
         """
         data = []
         for feature in self.files[recording_index]:
-            data += [np.load(feature).astype(np.float32)]
+            f = np.load(feature).astype(np.float32)
+            if f.ndim == 1:
+                f = f[:,None]
+
+            data += [f]
         data = self.prepare_data(data)
         return tuple(tf.constant(x) for x in data)
 
@@ -209,29 +385,11 @@ class DataGenerator:
         np.random.shuffle(self.files)
 
     def prepare_data(self, data):
+        # make sure data has dimensionality of (n_samples, n_features)
+        # data = [x[:,None] if x.ndim == 1 else x for x in data]
+
         return data
-        """Creates mismatch (imposter) envelope.
 
-        Parameters
-        ----------
-        data: Sequence[numpy.ndarray]
-            Data to create an imposter for.
-
-        Returns
-        -------
-        tuple (numpy.ndarray, numpy.ndarray, numpy.ndarray, ...)
-            (EEG, matched stimulus feature, mismatched stimulus feature, ...).
-        """
-        eeg = data[0]
-        new_length = eeg.shape[0] - self.window_length - self.spacing
-        resulting_data = [eeg[:new_length, ...]]
-        for stimulus_feature in data[1:]:
-            match_feature = stimulus_feature[:new_length, ...]
-            mismatch_feature = stimulus_feature[
-                self.spacing + self.window_length:, ...
-            ]
-            resulting_data += [match_feature, mismatch_feature]
-        return resulting_data
 
 class MatchMismatchDataGenerator(DataGenerator):
     def __init__(
@@ -272,9 +430,9 @@ class MatchMismatchDataGenerator(DataGenerator):
         resulting_data = [eeg[:new_length, ...]]
         for stimulus_feature in data[1:]:
             match_feature = stimulus_feature[:new_length, ...]
-            mismatch_feature = stimulus_feature[
-                self.spacing + self.window_length:, ...
-            ]
-            resulting_data += [match_feature, mismatch_feature]
+            # mismatch_feature = stimulus_feature[
+            #     self.spacing + self.window_length:, ...
+            # ]
+            resulting_data += [match_feature]# , mismatch_feature]
         return resulting_data
 
