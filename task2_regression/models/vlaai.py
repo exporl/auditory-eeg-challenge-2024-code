@@ -6,7 +6,8 @@ import tensorflow as tf
 
 def extractor(
     filters=(256, 256, 256, 128, 128),
-    kernels=(8,) * 5,
+    kernels=(64,) * 5,
+    dilation_rate = 1,
     input_channels=64,
     normalization_fn=lambda x: tf.keras.layers.LayerNormalization()(x),
     activation_fn=lambda x: tf.keras.layers.LeakyReLU()(x),
@@ -16,7 +17,7 @@ def extractor(
 
     Parameters
     ----------
-    filters: Sequence[int]
+    filters: Sequence[int]python 
         Number of filters for each layer.
     kernels: Sequence[int]
         Kernel size for each layer.
@@ -42,8 +43,15 @@ def extractor(
         raise ValueError("'filters' and 'kernels' must have the same length")
 
     # Add the convolutional layers
+    i = 0
     for filter_, kernel in zip(filters, kernels):
-        x = tf.keras.layers.Conv1D(filter_, kernel)(x)
+        i +=1
+
+        if i == len(filters) :
+            padding = 'valid'
+        else:
+            padding = 'valid'
+        x = tf.keras.layers.Conv1D(filter_, kernel, dilation_rate=dilation_rate,padding=padding )(x)
         x = normalization_fn(x)
         x = activation_fn(x)
         x = tf.keras.layers.ZeroPadding1D((0, kernel - 1))(x)
@@ -53,7 +61,7 @@ def extractor(
 
 def output_context(
     filter_=64,
-    kernel=32,
+    kernel=64,
     input_channels=64,
     normalization_fn=lambda x: tf.keras.layers.LayerNormalization()(x),
     activation_fn=lambda x: tf.keras.layers.LeakyReLU()(x),
@@ -182,7 +190,7 @@ def pearson_tf(y_true, y_pred, axis=1):
     denominator = tf.sqrt(std_true * std_pred)
 
     # Compute the pearson correlation
-    return tf.math.divide_no_nan(numerator, denominator)
+    return tf.reduce_mean(tf.math.divide_no_nan(numerator, denominator), axis=-1)
 
 
 @tf.function

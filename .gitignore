@@ -166,3 +166,7 @@ task*/experiments/results*/
 .err
 .out
 .log
+.job
+speech-decoding/*
+speech-decoding
+.m

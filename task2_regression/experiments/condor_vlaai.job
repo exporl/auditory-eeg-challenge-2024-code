@@ -31,12 +31,12 @@ initialdir = /esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/aud
 executable = /esat/spchtemp/scratch/lbollens/dleeg/c2dnn/utils/condor/create_environment_tf_3.5.sh
 # Extra arguments for the executable
 
-Arguments = "/esat/spchtemp/scratch/lbollens/program_installs/anaconda3/envs/tf2_11/bin/python /esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code/task2_regression/experiments/linear_baseline_mel.py"
+Arguments = "/esat/spchtemp/scratch/lbollens/program_installs/anaconda3/envs/tf2_11/bin/python /esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code/task2_regression/experiments/vlaai_mel.py"
 
 
-Log          = /esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code/task2_regression/models/linear_baseline_mel_light.log
-Output       = /esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code/task2_regression/models/linear_baseline_mel_light.out
-Error        =/esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code/task2_regression/models/linear_baseline_mel_light.err
+Log          = /esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code/task2_regression/models/vlaai_mel.log
+Output       = /esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code/task2_regression/models/vlaai_mel.out
+Error        =/esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code/task2_regression/models/vlaai_mel.err
 
 # Queue job
 Queue 1

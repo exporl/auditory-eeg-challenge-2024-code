@@ -59,3 +59,29 @@ def simple_linear_model(integration_window=32, nb_filters=1, nb_channels=64):
         metrics=[pearson_metric_cut]
     )
     return model
+
+def simple_linear_model_stimulus(integration_window=32, nb_filters=1, nb_channels=64):
+    inp = tf.keras.layers.Input(
+        (
+            None,
+            nb_channels,
+        )
+
+
+    )
+    # env = abs(s)
+    # f0= np.phase(s)
+    # f0 = np.angle(s)
+
+    # reconstruct env
+    # reconsturct f0
+    # reconstructed s = real(reconstructed_env .*exp(1j*reconstructed_f0))./ np.max(abs(reconstructed_env))
+
+    out = tf.keras.layers.Conv1D(nb_filters, integration_window)(inp)
+    model = tf.keras.models.Model(inputs=[inp], outputs=[out])
+    model.compile(
+        tf.keras.optimizers.Adam(),
+        loss=pearson_loss_cut,
+        metrics=[pearson_metric_cut]
+    )
+    return model
