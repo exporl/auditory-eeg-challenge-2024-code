@@ -69,13 +69,13 @@ if __name__ == "__main__":
     # Provide the path of the dataset
     # which is split already to train, val, test
 
-    data_folder = os.path.join(config["dataset_folder"],config["derivatives_folder"],  config[f"split_folder_{fs}"])
+    data_folder = os.path.join(config["dataset_folder"],config["derivatives_folder"],  config["split_folder"])
     stimulus_features = ["mel"]
     features = ["eeg"] + stimulus_features
 
 
     # Create a directory to store (intermediate) results
-    results_folder = os.path.join(experiments_folder, f"results_vlaai_mel_{fs}")
+    results_folder = os.path.join(experiments_folder, "results_vlaai_mel")
     os.makedirs(results_folder, exist_ok=True)
 
     # create the model

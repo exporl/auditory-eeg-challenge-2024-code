@@ -5,10 +5,5 @@
   "derivatives_folder": "derivatives",
   "preprocessed_eeg_folder": "preprocessed_eeg",
   "preprocessed_stimuli_folder": "preprocessed_stimuli",
-  "preprocessed_eeg_folder_1024": "preprocessed_eeg_1024",
-  "preprocessed_stimuli_folder_1024": "preprocessed_stimuli_1024",
-  "split_folder": "split_data",
-  "split_folder_1024": "split_data_1024",
-  "split_folder_256": "split_data_256",
-  "split_folder_64": "split_data_64"
+  "split_folder": "split_data"
 }

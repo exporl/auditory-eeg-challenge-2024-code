@@ -1,5 +1,6 @@
-"""Default dilation model."""
+"""2 mismatched segments dilation model."""
 import tensorflow as tf
+
 
 def dilation_model(
     time_window=None,
@@ -11,7 +12,7 @@ def dilation_model(
     dilation_filters=16,
     activation="relu",
     compile=True,
-    inputs=tuple(),
+    num_mismatched_segments=2
 ):
     """Convolutional dilation model.
 
@@ -47,14 +48,14 @@ def dilation_model(
 
     Returns
     -------
-    tf.Modelnumber_of_mismatch
+    tf.Model
         The dilation model
 
 
     References
     ----------
     Accou, B., Jalilpour Monesi, M., Montoya, J., Van hamme, H. & Francart, T.
-    Modeling the relationship betnumber_mismatchween acoustic stimulus and EEG with a dilated
+    Modeling the relationship between acoustic stimulus and EEG with a dilated
     convolutional neural network. In 2020 28th European Signal Processing
     Conference (EUSIPCO), 1175–1179, DOI: 10.23919/Eusipco47968.2020.9287417
     (2021). ISSN: 2076-1465.
@@ -64,13 +65,15 @@ def dilation_model(
     paradigm. J. Neural Eng. 18, 066008, DOI: 10.1088/1741-2552/ac33e9 (2021).
     Publisher: IOP Publishing
     """
-    # If different inputs are required
-    if len(inputs) == 3:
-        eeg, env1, env2 = inputs[0], inputs[1], inputs[2]
-    else:
-        eeg = tf.keras.layers.Input(shape=[time_window, eeg_input_dimension])
-        env1 = tf.keras.layers.Input(shape=[time_window, env_input_dimension])
-        env2 = tf.keras.layers.Input(shape=[time_window, env_input_dimension])
+
+    eeg = tf.keras.layers.Input(shape=[time_window, eeg_input_dimension])
+    stimuli_input = [tf.keras.layers.Input(shape=[time_window, env_input_dimension]) for _ in range(num_mismatched_segments+1)]
+
+    all_inputs = [eeg]
+    all_inputs.extend(stimuli_input)
+
+
+    stimuli_proj = [x for x in stimuli_input]
 
     # Activations to apply
     if isinstance(activation, str):
@@ -78,8 +81,7 @@ def dilation_model(
     else:
         activations = activation
 
-    env_proj_1 = env1
-    env_proj_2 = env2
+
     # Spatial convolution
     eeg_proj_1 = tf.keras.layers.Conv1D(spatial_filters, kernel_size=1)(eeg)
 
@@ -89,7 +91,7 @@ def dilation_model(
         eeg_proj_1 = tf.keras.layers.Conv1D(
             dilation_filters,
             kernel_size=kernel_size,
-            dilation_rate=kernel_size**layer_index,
+            dilation_rate=kernel_size ** layer_index,
             strides=1,
             activation=activations[layer_index],
         )(eeg_proj_1)
@@ -98,30 +100,28 @@ def dilation_model(
         env_proj_layer = tf.keras.layers.Conv1D(
             dilation_filters,
             kernel_size=kernel_size,
-            dilation_rate=kernel_size**layer_index,
+            dilation_rate=kernel_size ** layer_index,
             strides=1,
             activation=activations[layer_index],
         )
-        env_proj_1 = env_proj_layer(env_proj_1)
-        env_proj_2 = env_proj_layer(env_proj_2)
+
+        stimuli_proj = [env_proj_layer(stimulus_proj) for stimulus_proj in stimuli_proj]
+
 
     # Comparison
-    cos1 = tf.keras.layers.Dot(1, normalize=True)([eeg_proj_1, env_proj_1])
-    cos2 = tf.keras.layers.Dot(1, normalize=True)([eeg_proj_1, env_proj_2])
-
+    cos = [tf.keras.layers.Dot(1, normalize=True)([eeg_proj_1, stimulus_proj]) for stimulus_proj in stimuli_proj]
 
     linear_proj_sim = tf.keras.layers.Dense(1, activation="linear")
 
     # Linear projection of similarity matrices
-    cos1_proj = linear_proj_sim(tf.keras.layers.Flatten()(cos1))
-    cos2_proj = linear_proj_sim(tf.keras.layers.Flatten()(cos2))
+    cos_proj = [linear_proj_sim(tf.keras.layers.Flatten()(cos_i)) for cos_i in cos]
 
 
     # Classification
-    out = tf.keras.activations.softmax((tf.keras.layers.Concatenate()([cos1_proj, cos2_proj])))
+    out = tf.keras.activations.softmax((tf.keras.layers.Concatenate()(cos_proj)))
 
 
-    model = tf.keras.Model(inputs=[eeg, env1, env2], outputs=[out])
+    model = tf.keras.Model(inputs=all_inputs, outputs=[out])
 
     if compile:
         model.compile(

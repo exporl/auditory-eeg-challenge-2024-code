@@ -37,8 +37,8 @@ from brain_pipe.preprocessing.stimulus.audio.spectrogram import LibrosaMelSpectr
 
 from brain_pipe.preprocessing.stimulus.load import LoadStimuli
 from brain_pipe.runner.default import DefaultRunner
-# from brain_pipe.save.default import DefaultSave
-from mel import DefaultSave
+from brain_pipe.save.default import DefaultSave
+# from mel import DefaultSave
 from brain_pipe.utils.log import default_logging, DefaultFormatter
 from brain_pipe.utils.path import BIDSStimulusGrouper
 
@@ -211,7 +211,7 @@ def bids_filename_fn(data_dict, feature_name, set_name=None):
 def get_window_function(arg, data_dict):
     return scipy.signal.windows.hamming(int(0.025 * data_dict["stimulus_sr"]))
 def get_hop_length(arg, data_dict):
-    return int((1 / 500) * data_dict["stimulus_sr"])
+    return int((1 / 128) * data_dict["stimulus_sr"])
 def get_n_fft(arg, data_dict):
     return int(math.pow(2, math.ceil(math.log2(int(0.025 * data_dict["stimulus_sr"])))))
 def get_win_length(arg, data_dict):
@@ -224,13 +224,8 @@ def get_default_librosa_kwargs():
         "hop_length": get_hop_length,
         "n_fft": get_n_fft,
         "win_length": get_win_length,
-        # "window": lambda arg, data_dict: scipy.signal.windows.hamming(int(0.025 * data_dict["stimulus_sr"])),
-        # "hop_length": lambda arg, data_dict: int((1 / 1024) * data_dict["stimulus_sr"]),
-        # "n_fft": lambda arg, data_dict: int(
-        #     math.pow(2, math.ceil(math.log2(int(0.025 * data_dict["stimulus_sr"]))))),
-        # "win_length": lambda arg, data_dict: int(0.025 * data_dict["stimulus_sr"]),
         "fmin": 0,
-        "fmax": 1024,
+        "fmax": 5000,
         "htk": True,
         "n_mels": 10,
         "center": False,
@@ -296,11 +291,12 @@ def run_preprocessing_pipeline(
     stimulus_steps = DefaultPipeline(
         steps=[
             LoadStimuli(load_fn=temp_stimulus_load_fn),
+            GammatoneEnvelope(),
             LibrosaMelSpectrogram(librosa_kwargs=get_default_librosa_kwargs()),
-            ResamplePoly(64, data_key = ['spectrogram_data', 'stimulus_data'], sampling_frequency_key = ['spectrogram_sr', 'stimulus_sr'], axis=0),
+            ResamplePoly(64, data_key = ['spectrogram_data', 'envelope_data'], sampling_frequency_key = ['spectrogram_sr', 'stimulus_sr'], axis=0),
             DefaultSave(
                 preprocessed_stimuli_dir,
-                to_save={'mel': 'spectrogram_data', 'stimulus': 'stimulus_data' },
+                to_save={'mel': 'spectrogram_data', 'envelope': 'envelope_data' },
                 overwrite=overwrite
             ),
             DefaultSave(preprocessed_stimuli_dir, overwrite=overwrite),
@@ -327,7 +323,7 @@ def run_preprocessing_pipeline(
         InterpolateArtifacts(),
         AlignPeriodicBlockTriggers(biosemi_trigger_processing_fn),
         SplitEpochs(),
-        # ArtifactRemovalMWF(),
+        ArtifactRemovalMWF(),
         CommonAverageRereference(),
         ResamplePoly(64, axis=1),
         DefaultSave(
@@ -370,10 +366,10 @@ if __name__ == "__main__":
     dataset_folder = config["dataset_folder"]
     derivatives_folder = os.path.join(dataset_folder, config["derivatives_folder"])
     preprocessed_stimuli_folder = os.path.join(
-        derivatives_folder, f'{config["preprocessed_stimuli_folder"]}_64'
+        derivatives_folder, config["preprocessed_stimuli_folder"]
     )
     preprocessed_eeg_folder = os.path.join(
-        derivatives_folder, f'{config["preprocessed_eeg_folder"]}_64'
+        derivatives_folder, config["preprocessed_eeg_folder"]
     )
     default_log_folder = os.path.dirname(os.path.abspath(__file__))
 

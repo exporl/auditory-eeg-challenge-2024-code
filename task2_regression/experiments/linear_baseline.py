@@ -52,14 +52,15 @@ def evaluate_model(model, test_dict):
 if __name__ == "__main__":
     # Parameters
     # Length of the decision window
-    fs = 1024
+    fs = 64
     window_length = 5 * fs  # 10 seconds
     # Hop length between two consecutive decision windows
     hop_length = 1*fs
     epochs = 100
     patience = 5
-    batch_size = 32
+    batch_size = 16
     only_evaluate = False
+
 
 
 
@@ -76,8 +77,8 @@ if __name__ == "__main__":
     # Provide the path of the dataset
     # which is split already to train, val, test
 
-    data_folder = os.path.join(config["dataset_folder"],config["derivatives_folder"],  config["split_folder_1024"])
-    stimulus_features = ["stimulus"]
+    data_folder = os.path.join(config["dataset_folder"],config["derivatives_folder"],  config["split_folder"])
+    stimulus_features = ["mel"]
     features = ["eeg"] + stimulus_features
 
     # Create a directory to store (intermediate) results
@@ -89,66 +90,66 @@ if __name__ == "__main__":
     # Get all different subjects from the training set
     all_subs = list(
         set([os.path.basename(x).split("_-_")[1] for x in glob.glob(os.path.join(data_folder, "train_-_*"))]))
-    for sub in all_subs:
+# for sub in all_subs:
 
-        # create a simple linear model
-        model = simple_linear_model(integration_window = int(1024*0.25), nb_filters=1)
-        model.summary()
-        model_path = os.path.join(results_folder, f"model_{sub}.h5")
-        training_log_filename = f"training_log_{sub}.csv"
-        results_filename = f'eval_{sub}.json'
-
-
-        if only_evaluate:
-            # load weights
-            model.load_weights(model_path)
-        else:
-
-            train_files = [x for x in glob.glob(os.path.join(data_folder, "train_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features and sub in x]
-            # Create list of numpy array files
-            train_generator = DataGenerator(train_files, window_length)
-            dataset_train = create_tf_dataset(train_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
-            # dataset_train = create_tf_dataset_light(train_files, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
+    # create a simple linear model
+    model = simple_linear_model(integration_window = int(fs*0.25), nb_filters=10)
+    model.summary()
+    model_path = os.path.join(results_folder, f"model.h5")
+    training_log_filename = f"training_log.csv"
+    results_filename = f'eval.json'
 
 
-            # Create the generator for the validation set
-            val_files = [x for x in glob.glob(os.path.join(data_folder, "val_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features and sub in x]
-            val_generator = DataGenerator(val_files, window_length)
-            dataset_val = create_tf_dataset(val_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
-            # dataset_val = create_tf_dataset(create_tf_dataset_light, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
+    if only_evaluate:
+        # load weights
+        model.load_weights(model_path)
+    else:
 
-            # Train the model
-            model.fit(
-                dataset_train,
-                epochs=epochs,
-                validation_data=dataset_val,
-                callbacks=[
-                    tf.keras.callbacks.ModelCheckpoint(model_path, save_best_only=True),
-                    tf.keras.callbacks.CSVLogger(os.path.join(results_folder, training_log_filename)),
-                    tf.keras.callbacks.EarlyStopping(patience=patience, restore_best_weights=True),
-                ],
-                workers = tf.data.AUTOTUNE,
-                use_multiprocessing=True
+        train_files = [x for x in glob.glob(os.path.join(data_folder, "train_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features ]
+        # Create list of numpy array files
+        train_generator = DataGenerator(train_files, window_length)
+        dataset_train = create_tf_dataset(train_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
+        # dataset_train = create_tf_dataset_light(train_files, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
 
-            )
 
-        # Evaluate the model on test set
-        # Create a dataset generator for each test subject
-        test_files = [x for x in glob.glob(os.path.join(data_folder, "test_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features and sub in x]
-        # Get all different subjects from the test set
-        subjects = list(set([os.path.basename(x).split("_-_")[1] for x in test_files]))
-        datasets_test = {}
-        # Create a generator for each subject
-        for sub in subjects:
-            files_test_sub = [f for f in test_files if sub in os.path.basename(f)]
-            test_generator = DataGenerator(files_test_sub, window_length)
-            datasets_test[sub] = create_tf_dataset(test_generator, window_length, None, hop_length, batch_size=64, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
+        # Create the generator for the validation set
+        val_files = [x for x in glob.glob(os.path.join(data_folder, "val_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
+        val_generator = DataGenerator(val_files, window_length)
+        dataset_val = create_tf_dataset(val_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
+        # dataset_val = create_tf_dataset_light(val_files, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
 
-        # Evaluate the model
-        evaluation = evaluate_model(model, datasets_test)
+        # Train the model
+        model.fit(
+            dataset_train,
+            epochs=epochs,
+            validation_data=dataset_val,
+            callbacks=[
+                tf.keras.callbacks.ModelCheckpoint(model_path, save_best_only=True),
+                tf.keras.callbacks.CSVLogger(os.path.join(results_folder, training_log_filename)),
+                tf.keras.callbacks.EarlyStopping(patience=patience, restore_best_weights=True),
+            ],
+            workers = tf.data.AUTOTUNE,
+            use_multiprocessing=True
 
-        # We can save our results in a json encoded file
-        results_path = os.path.join(results_folder, results_filename)
-        with open(results_path, "w") as fp:
-            json.dump(evaluation, fp)
-        logging.info(f"Results saved at {results_path}")
+        )
+
+    # Evaluate the model on test set
+    # Create a dataset generator for each test subject
+    test_files = [x for x in glob.glob(os.path.join(data_folder, "test_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
+    # Get all different subjects from the test set
+    subjects = list(set([os.path.basename(x).split("_-_")[1] for x in test_files]))
+    datasets_test = {}
+    # Create a generator for each subject
+    for sub in subjects:
+        files_test_sub = [f for f in test_files if sub in os.path.basename(f)]
+        test_generator = DataGenerator(files_test_sub, window_length)
+        datasets_test[sub] = create_tf_dataset(test_generator, window_length, None, hop_length, batch_size=64, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
+
+    # Evaluate the model
+    evaluation = evaluate_model(model, datasets_test)
+
+    # We can save our results in a json encoded file
+    results_path = os.path.join(results_folder, results_filename)
+    with open(results_path, "w") as fp:
+        json.dump(evaluation, fp)
+    logging.info(f"Results saved at {results_path}")
