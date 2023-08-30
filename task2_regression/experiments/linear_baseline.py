@@ -12,10 +12,9 @@ import tensorflow as tf
 import scipy.stats
 import numpy as np
 
-import sys
-sys.path.append('/esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code')
+
 from task2_regression.models.linear import simple_linear_model, pearson_loss_cut, pearson_metric_cut
-from util.dataset_generator import DataGenerator, create_tf_dataset, create_tf_dataset_light
+from util.dataset_generator import DataGenerator, create_tf_dataset
 
 
 def evaluate_model(model, test_dict):
@@ -58,11 +57,8 @@ if __name__ == "__main__":
     hop_length = 1*fs
     epochs = 100
     patience = 5
-    batch_size = 16
+    batch_size = 64
     only_evaluate = False
-
-
-
 
     # Get the path to the config gile
     experiments_folder = os.path.dirname(__file__)
@@ -90,7 +86,7 @@ if __name__ == "__main__":
     # Get all different subjects from the training set
     all_subs = list(
         set([os.path.basename(x).split("_-_")[1] for x in glob.glob(os.path.join(data_folder, "train_-_*"))]))
-# for sub in all_subs:
+
 
     # create a simple linear model
     model = simple_linear_model(integration_window = int(fs*0.25), nb_filters=10)
@@ -109,14 +105,11 @@ if __name__ == "__main__":
         # Create list of numpy array files
         train_generator = DataGenerator(train_files, window_length)
         dataset_train = create_tf_dataset(train_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
-        # dataset_train = create_tf_dataset_light(train_files, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
-
 
         # Create the generator for the validation set
         val_files = [x for x in glob.glob(os.path.join(data_folder, "val_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
         val_generator = DataGenerator(val_files, window_length)
         dataset_val = create_tf_dataset(val_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
-        # dataset_val = create_tf_dataset_light(val_files, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
 
         # Train the model
         model.fit(
@@ -143,7 +136,7 @@ if __name__ == "__main__":
     for sub in subjects:
         files_test_sub = [f for f in test_files if sub in os.path.basename(f)]
         test_generator = DataGenerator(files_test_sub, window_length)
-        datasets_test[sub] = create_tf_dataset(test_generator, window_length, None, hop_length, batch_size=64, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
+        datasets_test[sub] = create_tf_dataset(test_generator, window_length, None, hop_length, batch_size=1, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
 
     # Evaluate the model
     evaluation = evaluate_model(model, datasets_test)

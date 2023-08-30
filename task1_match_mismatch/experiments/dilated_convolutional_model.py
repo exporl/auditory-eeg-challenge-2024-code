@@ -45,13 +45,12 @@ if __name__ == "__main__":
     window_length = window_length_s * fs  # 5 seconds
     # Hop length between two consecutive decision windows
     hop_length = 64
-    # Number of samples (space) between end of matched speech and beginning of mismatched speech
-    spacing = 64
+
     epochs = 100
     patience = 5
     batch_size = 64
     only_evaluate = False
-    number_mismatch = 2 # or 4
+    number_mismatch = 4 # or 4
 
 
 
@@ -84,13 +83,13 @@ if __name__ == "__main__":
     features = ["eeg"] + stimulus_features
 
     # Create a directory to store (intermediate) results
-    results_folder = os.path.join(experiments_folder, "results_dilated_convolutional_model_{}_MM_{}_s".format(number_mismatch, window_length_s))
+    results_folder = os.path.join(experiments_folder, "results_dilated_convolutional_model_{}_MM_{}_s_{}".format(number_mismatch, window_length_s, stimulus_features[0]))
     os.makedirs(results_folder, exist_ok=True)
 
     # create dilation model
     model = dilation_model(time_window=window_length, eeg_input_dimension=64, env_input_dimension=stimulus_dimension, num_mismatched_segments = number_mismatch)
 
-    model_path = os.path.join(results_folder, "model_{}_MM_{}_s.h5".format(number_mismatch, window_length_s))
+    model_path = os.path.join(results_folder, "model_{}_MM_{}_s_{}.h5".format(number_mismatch, window_length_s, stimulus_features[0]))
 
     if only_evaluate:
         model = tf.keras.models.load_model(model_path)
@@ -101,12 +100,20 @@ if __name__ == "__main__":
         # Create list of numpy array files
         train_generator = DataGenerator(train_files, window_length)
         import pdb
-        dataset_train = create_tf_dataset(train_generator, window_length, batch_equalizer_fn, hop_length, batch_size, number_mismatch=number_mismatch)
+        dataset_train = create_tf_dataset(train_generator, window_length, batch_equalizer_fn,
+                                          hop_length, batch_size,
+                                          number_mismatch=number_mismatch,
+                                          data_types=(tf.float32, tf.float32),
+                                          feature_dims=(64, stimulus_dimension))
 
         # Create the generator for the validation set
         val_files = [x for x in glob.glob(os.path.join(data_folder, "val_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
         val_generator = DataGenerator(val_files, window_length)
-        dataset_val = create_tf_dataset(val_generator, window_length, batch_equalizer_fn, hop_length, batch_size, number_mismatch=number_mismatch)
+        dataset_val = create_tf_dataset(val_generator,  window_length, batch_equalizer_fn,
+                                          hop_length, batch_size,
+                                          number_mismatch=number_mismatch,
+                                          data_types=(tf.float32, tf.float32),
+                                          feature_dims=(64, stimulus_dimension))
 
         # Evaluate the model on test set
         # Create a dataset generator for each test subject
@@ -119,9 +126,11 @@ if __name__ == "__main__":
         for sub in subjects:
             files_test_sub = [f for f in test_files if sub in os.path.basename(f)]
             test_generator = DataGenerator(files_test_sub, window_length)
-            datasets_test[sub] = create_tf_dataset(test_generator, window_length, batch_equalizer_fn,
-                                                   hop_length, batch_size=1, number_mismatch=number_mismatch)
-
+            datasets_test[sub] = create_tf_dataset(test_generator,  window_length, batch_equalizer_fn,
+                                          hop_length, batch_size=1,
+                                          number_mismatch=number_mismatch,
+                                          data_types=(tf.float32, tf.float32),
+                                          feature_dims=(64, stimulus_dimension))
 
         # Train the model
         model.fit(

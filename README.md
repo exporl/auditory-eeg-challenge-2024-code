@@ -29,28 +29,28 @@ python3 -m install requirements.txt
 
 ## 2. [Download the data](https://kuleuven-my.sharepoint.com/personal/lies_bollens_kuleuven_be/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Flies%5Fbollens%5Fkuleuven%5Fbe%2FDocuments%2FICASSP%2D2023%2Deeg%2Ddecoding%2Dchallenge%2Ddataset&ga=1) 
 
-You will need a password, which you will receive when you [register](https://exporl.github.io/auditory-eeg-challenge-2023/registration/).
+You will need a password, which you will receive when you [register](https://exporl.github.io/auditory-eeg-challenge-2024/registration/).
 The folder contains multiple folders (and `zip` files containing the same data as their corresponding folders). For bulk downloading, we recommend using the `zip` files, as there is a bug in Onedrive when it has to zip files >= 4GB resulting in "corrupt" zip archives.
 
    1. `split_data(.zip)` contains already preprocessed, split and normalized data; ready for model training/evaluation. 
 If you want to get started quickly, you can opt to only download this folder/zipfile.
 
    2. `preprocessed_eeg(.zip)` and `preprocessed_stimuli(.zip)` contain preprocessed EEG and stimuli files (envelope and mel features) respectively.
-At this stage data is not yet split into different sets and normalized. To go from this to the data in `split_data`, you will have to run the `speech_features.py` script ([task1_match_mismatch/create_data/speech_features.py](./task1_match_mismatch/create_data/speech_features.py) for task 1 and [task2_regression/create_data/speech_features.py](./task2_regression/create_data/speech_features.py) for task 2).
+At this stage data is not yet split into different sets and normalized. To go from this to the data in `split_data`, you will have to run the `split_and_normalize.py` script ([preprocessing_code/split_and_normalize.py](./preprocessing_code/split_and_normalize.py) )
 
-   3. `raw_eeg(.zip)` and `stimuli(.zip)` contain the raw EEG and stimuli files. If you want to process the stimuli files, you can run `split_and_normalize.py` (([task1_match_mismatch/create_data/split_and_normalize.py](./task1_match_mismatch/create_data/split_and_normalize.py) for task 1 and [task2_regression/create_data/split_and_normalize.py](./task2_regression/create_data/split_and_normalize.py) for task 2). The processed stimuli files will be stored in the `processed_stimuli` folder.
-Currently, no preprocessing code is made available to preprocess EEG, so you will have to write your own implementation or use the precomputed `processed_eeg` folder.
+   3. `sub_*(.zip)` and `stimuli(.zip)` contain the raw EEG and stimuli files. 
+If you want to recreate the preprocessing steps, you will need to download these files and then run `sparrKULee.py` [(preprocessing_code/sparrKULee.py)](./preprocessing_code/sparrKULee.py) to preprocess the EEG and stimuli and then run the `split_and_normalize.py` script to split and normalize the data.
+It is possible to adapt the preprocessing steps in `sparrKULee.py` to your own needs, by adding/removing preprocessing steps. For more detailed information on the pipeline, see the [brain_pipe documentation](https://exporl.github.io/brain_pipe/).
 
-Make sure to download/unzip these folders into the same folder (e.g. `challenge_folder_task1`) for each task.
+
 Note that it is possible to use the same preprocessed (and split) dataset for both task 1 and task 2, but it is not required.
 
 
-![data_diagram](./images/data_diagram.svg)
 
 ## 3. Adjust the `config.json` accordingly
 
 There is a general `config.json` defining the folder names and structure for the data (i.e. [util/config.json](./util/config.json) ).
-Adjust `dataset_folder` in the `config.json` file from `null` to the absolute path to the folder containing all data (The `challenge_folder_task_1` from the previous point).
+Adjust `dataset_folder` in the `config.json` file from `null` to the absolute path to the folder containing all data (The `challenge_folder` from the previous point).
   
 
 OK, you should be all setup now!

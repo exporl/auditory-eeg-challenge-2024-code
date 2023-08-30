@@ -39,7 +39,7 @@ def batch_equalizer_fn(*args):
     # create args
     args_to_zip = [args[i::num_stimuli] for i in range(1,num_stimuli+1)]
     for stimuli_features in zip(*args_to_zip):
-        print(stimuli_features)
+
         for i in range(num_stimuli):
             stimulus_rolled = tf.roll(stimuli_features, shift=i, axis=0)
             # reshape stimulus_rolled to merge the first two dimensions
@@ -259,7 +259,7 @@ class DataGenerator:
 
     def prepare_data(self, data):
         # make sure data has dimensionality of (n_samples, n_features)
-        # data = [x[:,None] if x.ndim == 1 else x for x in data]
+
 
         return data
 

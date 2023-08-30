@@ -378,7 +378,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--nb_processes",
         type=int,
-        default=4,
+        default=-1,
         help="Number of processes to use for the preprocessing. "
              "The default is to use all available cores (-1).",
     )

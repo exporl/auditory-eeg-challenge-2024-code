@@ -10,10 +10,9 @@ import tensorflow as tf
 
 import numpy as np
 
-import sys
-sys.path.append('/esat/spchtemp/scratch/lbollens/experiments/icassp2024Challenge/auditory-eeg-challenge-2024-code')
+
 from task2_regression.models.vlaai import vlaai, pearson_loss, pearson_metric
-from util.dataset_generator import DataGenerator, create_tf_dataset, create_tf_dataset_light
+from util.dataset_generator import DataGenerator, create_tf_dataset
 
 
 def evaluate_model(model, test_dict):
@@ -50,7 +49,7 @@ if __name__ == "__main__":
     hop_length = 1*fs
     epochs = 100
     patience = 10
-    batch_size = 8
+    batch_size = 10
     only_evaluate = False
     training_log_filename = "training_log.csv"
     results_filename = 'eval.json'
@@ -90,14 +89,11 @@ if __name__ == "__main__":
         # Create list of numpy array files
         train_generator = DataGenerator(train_files, window_length)
         dataset_train = create_tf_dataset(train_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
-        # dataset_train = create_tf_dataset_light(train_files, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
-
 
         # Create the generator for the validation set
         val_files = [x for x in glob.glob(os.path.join(data_folder, "val_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features ]
         val_generator = DataGenerator(val_files, window_length)
         dataset_val = create_tf_dataset(val_generator, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 10))
-        # dataset_val = create_tf_dataset(create_tf_dataset_light, window_length, None, hop_length, batch_size, data_types=(tf.float32, tf.float32), feature_dims=(64, 1))
 
         # Train the model
         model.fit(
