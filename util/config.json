@@ -1,7 +1,5 @@
 {
-  "dataset_folder": "/esat/audioslave/mjalilpo/published_dataset/FINAL_MAPPING/train",
-  "raw_eeg_folder": "raw_eeg",
-  "raw_stimuli_folder": "stimuli",
+  "dataset_folder": "PATH/TO/sparrKULee",
   "derivatives_folder": "derivatives",
   "preprocessed_eeg_folder": "preprocessed_eeg",
   "preprocessed_stimuli_folder": "preprocessed_stimuli",

@@ -9,9 +9,11 @@ import tensorflow as tf
 
 
 import numpy as np
+import sys
+# add base path to sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-
-from task2_regression.models.vlaai import vlaai, pearson_loss, pearson_metric
+from task2_regression.models.vlaai import vlaai, pearson_loss, pearson_metric, pearson_tf_non_averaged
 from util.dataset_generator import DataGenerator, create_tf_dataset
 
 
@@ -34,10 +36,26 @@ def evaluate_model(model, test_dict):
     evaluation = {}
     for subject, ds_test in test_dict.items():
         logging.info(f"Scores for subject {subject}:")
+        # evaluate model
+        ds = [x for x in ds_test]
+        eeg = tf.concat([x[0] for x in ds], axis=0)
+        labels = tf.concat([x[1] for x in ds], axis=0)
+
+        reconstructions = model.predict(eeg)
+        correlations = np.squeeze(pearson_tf_non_averaged(labels, reconstructions))
+
+        # calculate pearson correlation per band
+
         results = model.evaluate(ds_test, verbose=2)
+
         metrics = model.metrics_names
         evaluation[subject] = dict(zip(metrics, results))
+
+        evaluation[subject]["pearson_correlation_per_band"] = np.mean(correlations, axis=0).tolist()
+        # metrics = model.metrics_names
+        # evaluation[subject] = dict(zip(metrics, results))
     return evaluation
+
 
 
 if __name__ == "__main__":
@@ -50,7 +68,7 @@ if __name__ == "__main__":
     epochs = 100
     patience = 10
     batch_size = 10
-    only_evaluate = False
+    only_evaluate = True
     training_log_filename = "training_log.csv"
     results_filename = 'eval.json'
 
@@ -83,7 +101,8 @@ if __name__ == "__main__":
     model_path = os.path.join(results_folder, "model.h5")
 
     if only_evaluate:
-        model = tf.keras.models.load_model(model_path)
+
+        model.load_weights(model_path)
     else:
         train_files = [x for x in glob.glob(os.path.join(data_folder, "train_-_*")) if os.path.basename(x).split("_-_")[-1].split(".")[0] in features]
         # Create list of numpy array files

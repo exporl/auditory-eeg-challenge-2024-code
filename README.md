@@ -1,6 +1,6 @@
 Auditory-eeg-challenge-2024-code
 ================================
-This is the codebase for the [2024 ICASSP Auditory EEG challenge](https://exporl.github.io/auditory-eeg-challenge).
+This is the codebase for the [2024 ICASSP Auditory EEG challenge](https://exporl.github.io/auditory-eeg-challenge-2024).
 This codebase contains baseline models and code to preprocess stimuli for both tasks.
 
 # Prerequisites
@@ -27,10 +27,10 @@ source venv/bin/activate # Optional
 python3 -m install requirements.txt
 ```
 
-## 2. [Download the data](https://kuleuven-my.sharepoint.com/personal/lies_bollens_kuleuven_be/_layouts/15/onedrive.aspx?id=%2Fpersonal%2Flies%5Fbollens%5Fkuleuven%5Fbe%2FDocuments%2FICASSP%2D2023%2Deeg%2Ddecoding%2Dchallenge%2Ddataset&ga=1) 
+## 2. [Download the data](https://homes.esat.kuleuven.be/~lbollens/)
 
 You will need a password, which you will receive when you [register](https://exporl.github.io/auditory-eeg-challenge-2024/registration/).
-The folder contains multiple folders (and `zip` files containing the same data as their corresponding folders). For bulk downloading, we recommend using the `zip` files, as there is a bug in Onedrive when it has to zip files >= 4GB resulting in "corrupt" zip archives.
+The folder contains multiple folders (and `zip` files containing the same data as their corresponding folders). For bulk downloading, we recommend using the `zip` files, 
 
    1. `split_data(.zip)` contains already preprocessed, split and normalized data; ready for model training/evaluation. 
 If you want to get started quickly, you can opt to only download this folder/zipfile.
@@ -63,7 +63,8 @@ Each task has already some ready-to-go experiments files defined to give you a
 baseline and make you acquainted with the problem. The experiment files live
 in the `experiment` subfolder for each task. The training log,
 best model and evaluation results will be stored in a folder called
-`results_{experiment_name}`.
+`results_{experiment_name}`. For general ideas, you might want to look at the winners of the 
+[previous ICASSP auditory EEG challenge](https://exporl.github.io/auditory-eeg-challenge-2023).  
 
 ## Task1: Match-mismatch
     
@@ -71,6 +72,8 @@ By running [task1_match_mismatch/experiments/dilated_convolutional_model.py](./t
 you can train the dilated convolutional model introduced by Accou et al. [(2021a)](https://doi.org/10.23919/Eusipco47968.2020.9287417) and [(2021b)](https://doi.org/10.1088/1741-2552/ac33e9).
 
 Other models you might find interesting are [Decheveigné et al (2021)](https://www.sciencedirect.com/science/article/pii/S1053811918300338), [Monesi et al. (2020)](https://ieeexplore.ieee.org/abstract/document/9054000), [Monesi et al. (2021)](https://arxiv.org/abs/2106.09622),….
+
+
 
 ## Task2: Regression (reconstructing spectrogram from EEG)
 

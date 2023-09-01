@@ -208,8 +208,6 @@ def bids_filename_fn(data_dict, feature_name, set_name=None):
 
     return os.path.join(subject, session, filename + ".npy")
 
-def get_window_function(arg, data_dict):
-    return scipy.signal.windows.hamming(int(0.025 * data_dict["stimulus_sr"]))
 def get_hop_length(arg, data_dict):
     return int((1 / 128) * data_dict["stimulus_sr"])
 def get_n_fft(arg, data_dict):
@@ -220,17 +218,16 @@ def get_win_length(arg, data_dict):
 def get_default_librosa_kwargs():
 
     librosa_kwargs = {
-        "window": get_window_function,
+        "window": 'hann',
         "hop_length": get_hop_length,
         "n_fft": get_n_fft,
         "win_length": get_win_length,
         "fmin": 0,
         "fmax": 5000,
-        "htk": True,
+        "htk": False,
         "n_mels": 10,
         "center": False,
-        "norm": None,
-        "power": 1.0
+        "norm": 'slaney'
     }
     return librosa_kwargs
 

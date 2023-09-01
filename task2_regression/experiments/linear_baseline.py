@@ -8,12 +8,15 @@ os.environ['TF_GPU_THREAD_MODE'] = 'gpu_private'
 
 import tensorflow as tf
 
+import sys
+# add base path to sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 import scipy.stats
 import numpy as np
 
 
-from task2_regression.models.linear import simple_linear_model, pearson_loss_cut, pearson_metric_cut
+from task2_regression.models.linear import simple_linear_model, pearson_loss_cut, pearson_metric_cut, pearson_metric_cut_non_averaged
 from util.dataset_generator import DataGenerator, create_tf_dataset
 
 
@@ -37,11 +40,23 @@ def evaluate_model(model, test_dict):
     for subject, ds_test in test_dict.items():
         logging.info(f"Scores for subject {subject}:")
            # evaluate model
+        ds = [x for x in ds_test]
+        eeg = tf.concat([ x[0] for x in ds], axis=0)
+        labels =tf.concat([ x[1] for x in ds], axis=0)
+
+
+        reconstructions = model.predict(eeg)
+        correlations = np.squeeze(pearson_metric_cut_non_averaged(labels, reconstructions))
+
+        # calculate pearson correlation per band
+
         results = model.evaluate(ds_test, verbose=2)
+
         metrics = model.metrics_names
         evaluation[subject] = dict(zip(metrics, results))
 
 
+        evaluation[subject]["pearson_correlation_per_band"] = np.mean(correlations, axis=0).tolist()
         # metrics = model.metrics_names
         # evaluation[subject] = dict(zip(metrics, results))
     return evaluation
@@ -52,13 +67,13 @@ if __name__ == "__main__":
     # Parameters
     # Length of the decision window
     fs = 64
-    window_length = 5 * fs  # 10 seconds
+    window_length = 60 * fs  # 10 seconds
     # Hop length between two consecutive decision windows
-    hop_length = 1*fs
+    hop_length = 30*fs
     epochs = 100
     patience = 5
     batch_size = 64
-    only_evaluate = False
+    only_evaluate = True
 
     # Get the path to the config gile
     experiments_folder = os.path.dirname(__file__)
