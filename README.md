@@ -50,7 +50,8 @@ Note that it is possible to use the same preprocessed (and split) dataset for bo
 ## 3. Adjust the `config.json` accordingly
 
 There is a general `config.json` defining the folder names and structure for the data (i.e. [util/config.json](./util/config.json) ).
-Adjust `dataset_folder` in the `config.json` file from `null` to the absolute path to the folder containing all data (The `challenge_folder` from the previous point).
+Adjust `dataset_folder` in the `config.json` file from `null` to the absolute path to the folder containing all data (The `challenge_folder` from the previous point). 
+If you follow the BIDS structure, by downloading the whole dataset, the folders preprocessed_eeg, preprocessed_stimuli and split_data, should be located inside the 'derivatives' folder. If you only download these three folders, make sure they are either in a subfolder 'derivatives', or change the 'derivatives' folder in the config, otherwise you will get a file-not-found error when trying to run the experiments. 
   
 
 OK, you should be all setup now!
